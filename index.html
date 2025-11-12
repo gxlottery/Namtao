@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🎲 เกมน้ำเต้าปูปลา</title>
+<title>🎲 เกมน้ำเต้าปูปลา (Firebase Edition)</title>
 
 <style>
   /* CSS สำหรับพื้นหลังและ Fonts */
@@ -98,6 +98,24 @@
       color: #33ff33;
       text-shadow: 0 0 8px rgba(51, 255, 51, 0.5);
   }
+  /* ปุ่มรีเฟรชใหม่ */
+  .refresh-btn-admin {
+      background-color: #007bff; /* Blue for refresh */
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+      margin-bottom: 15px;
+      width: 100%;
+      max-width: 300px;
+  }
+  .refresh-btn-admin:hover {
+      background-color: #0056b3;
+  }
+
   #user-list {
       list-style: none;
       padding: 0;
@@ -114,6 +132,12 @@
       align-items: center;
       justify-content: space-between;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+  /* เน้นชื่อผู้ใช้ให้เด่นขึ้น */
+  .user-info strong {
+      color: #FFDC00; 
+      font-size: 1.1em;
+      text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
   }
   .user-info {
       font-weight: bold;
@@ -181,7 +205,7 @@
   /* CSS ใหม่: สำหรับปุ่มบริการ (เติมเงิน/ถอนเงิน) */
   .service-buttons {
       margin-bottom: 20px;
-      margin-top: -10px; /* ขยับขึ้นเล็กน้อย */
+      margin-top: -10px; 
   }
   .service-btn {
       display: inline-block;
@@ -344,6 +368,9 @@
     .admin-controls button { flex: 1; }
   }
 </style>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 <body>
   
@@ -369,6 +396,10 @@
       <h2>🛠️ แผงควบคุมผู้ดูแลระบบ</h2>
       <p style="color: orange;">**คำเตือน:** ระบบนี้ไม่ปลอดภัยและไม่ควรใช้กับเงินจริง</p>
       
+      <button onclick="renderUserList()" class="refresh-btn-admin">
+          🔄 รีเฟรชรายชื่อผู้เล่น
+      </button>
+
       <ul id="user-list">
           </ul>
       
@@ -420,6 +451,10 @@
       <button class="bet-btn" onclick="setBet(10)">+10</button>
       <button class="bet-btn" onclick="setBet(50)">+50</button>
       <button class="bet-btn" onclick="setMaxBet()">เดิมพันสูงสุด</button>
+      
+      <div id="totalBetDisplay" style="width: 100%; margin-top: 10px; font-weight: bold; color: #33ff33; font-size: 18px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px;">
+          ยอดเดิมพันรวม: <span>0</span> บาท
+      </div>
     </div>
     
     <button id="roll">หมุนลูกเต๋า</button>
@@ -432,17 +467,42 @@
 <audio id="winSound" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
 
 <script>
-// --- Admin Credentials ---
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = '03774570'; // รหัสผ่านตามที่ร้องขอ
+// ===============================================
+// 🎯🎯🎯 1. Firebase Configuration (โค้ดจริงของคุณ GoldoraX-Game) 🎯🎯🎯
+// ===============================================
+const firebaseConfig = {
+    apiKey: "AIzaSyACTSU6LYObSv5gEAfKJt4Yr4LaCCAkQvw",
+    authDomain: "goldorax-game.firebaseapp.com",
+    databaseURL: "https://goldorax-game-default-rtdb.asia-southeast1.firebasedatabase.app", 
+    projectId: "goldorax-game",
+    storageBucket: "goldorax-game.firebasestorage.app",
+    messagingSenderId: "601999451419",
+    appId: "1:601999451419:web:f0782a8437b493eb8f5fbe",
+    measurementId: "G-09PW99QK06" 
+};
 
-// --- ส่วนจัดการ Auth และ Login ---
+// ชื่อคอลเลกชันใน Firestore สำหรับเกมนี้โดยเฉพาะ (ป้องกันการตีกับ Gxlotterry)
+const HOO_HEY_HOW_COLLECTION = "hoo_hey_how_players";
+
+// ===============================================
+// 2. Initialize Firebase และ Global Variables
+// ===============================================
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore(); 
+
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = '03774570'; 
+
 let isLoginMode = true;
 const balanceDisplay = document.getElementById('playerBalance');
 const betInput = document.getElementById('betAmount'); 
 let balance = 0;
+let currentUsername = null; 
 const minBet = 10;
 const maxBetDefault = 1000;
+const USER_DOMAIN = '@game.local'; 
 
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
@@ -455,8 +515,11 @@ function toggleAuthMode() {
         : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบที่นี่';
 }
 
-function handleAuth() {
-    const username = document.getElementById('username').value;
+// ===============================================
+// 3. User Authentication (ใช้ Firebase Auth)
+// ===============================================
+async function handleAuth() {
+    const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
     const errorMessage = document.getElementById('error-message');
     errorMessage.textContent = ''; 
@@ -466,58 +529,80 @@ function handleAuth() {
         return;
     }
     
-    // --- 1. ตรวจสอบ Admin Login ---
+    // ตรวจสอบ Admin Login (Local Check)
     if (username === ADMIN_USER && password === ADMIN_PASS) {
         adminLoginSuccess();
         return;
     }
-    
-    // --- 2. ตรวจสอบ User Login/Sign Up ---
-    let users = JSON.parse(localStorage.getItem('users')) || {};
 
-    if (isLoginMode) {
-        // LOGIN
-        if (users[username] && users[username].password === password) {
-            // ป้องกันผู้เล่นล็อกอินด้วยชื่อ Admin ถ้าไม่ใช้รหัสผ่าน Admin
-            if (username === ADMIN_USER) {
-                 errorMessage.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-                 return;
-            }
-            loginSuccess(username, users[username].balance);
+    const email = username + USER_DOMAIN;
+
+    try {
+        if (isLoginMode) {
+            // LOGIN with Firebase Auth
+            await auth.signInWithEmailAndPassword(email, password);
         } else {
+            // SIGN UP with Firebase Auth
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (password.length < 6) {
+                errorMessage.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+                return;
+            }
+            if (password !== confirmPassword) {
+                errorMessage.textContent = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
+                return;
+            }
+            
+            // สร้างผู้ใช้ใน Firebase Auth
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+
+            // สร้าง Document ใน Firestore สำหรับยอดเงินเริ่มต้น (ใช้คอลเลกชันเฉพาะ)
+            await db.collection(HOO_HEY_HOW_COLLECTION).doc(username).set({
+                username: username,
+                balance: 0,
+                uid: user.uid 
+            });
+            alert('สมัครสมาชิกสำเร็จ!');
+        }
+        
+        // ล็อกอินสำเร็จ (หรือสมัครสำเร็จ) จะถูกจัดการโดย auth.onAuthStateChanged
+    } catch (error) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             errorMessage.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-        }
-    } else {
-        // SIGN UP
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        if (password.length < 4) {
-            errorMessage.textContent = 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร';
-            return;
-        }
-        if (password !== confirmPassword) {
-            errorMessage.textContent = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
-            return;
-        }
-        if (users[username]) {
+        } else if (error.code === 'auth/email-already-in-use') {
             errorMessage.textContent = 'ชื่อผู้ใช้นี้มีคนใช้แล้ว';
-            return;
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage.textContent = 'รหัสผ่านอ่อนแอเกินไป (ต้องมีอย่างน้อย 6 ตัวอักษร)';
+        } else {
+            console.error(error);
+            errorMessage.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
         }
-        // ป้องกันไม่ให้สมัครสมาชิกด้วยชื่อ Admin
-        if (username === ADMIN_USER) {
-             errorMessage.textContent = 'ชื่อผู้ใช้นี้ถูกจองไว้แล้ว';
-             return;
-        }
-        
-        users[username] = { password: password, balance: 0 }; 
-        localStorage.setItem('users', JSON.stringify(users));
-        
-        loginSuccess(username, 0); 
     }
 }
 
-function loginSuccess(username, initialBalance) {
-    localStorage.setItem('currentUser', username);
-    balance = initialBalance;
+// ===============================================
+// 4. Game Logic Handlers
+// ===============================================
+
+async function loginSuccess(username, uid) {
+    currentUsername = username;
+    
+    // ดึงยอดเงินจาก Firestore (ใช้คอลเลกชันเฉพาะ)
+    const userDoc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(username).get();
+    
+    // หากไม่มี Document ใน Firestore (อาจเกิดจากการสมัครสมาชิกก่อนเพิ่ม Firestore) ให้สร้างใหม่
+    if (!userDoc.exists) {
+        balance = 0;
+        await db.collection(HOO_HEY_HOW_COLLECTION).doc(username).set({
+            username: username,
+            balance: balance,
+            uid: uid
+        });
+    } else {
+        balance = userDoc.data().balance;
+    }
+    
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
@@ -527,6 +612,7 @@ function loginSuccess(username, initialBalance) {
     
     balanceDisplay.textContent = balance;
     updateBetControls();
+    updateTotalCostDisplay(); // แสดงยอดเดิมพันรวมเริ่มต้น
 }
 
 function updateBetControls() {
@@ -546,74 +632,74 @@ function updateBetControls() {
 }
 
 function logout() {
-    const username = localStorage.getItem('currentUser');
-    if (username) { 
-        let users = JSON.parse(localStorage.getItem('users')) || {};
-        if (users[username]) {
-            users[username].balance = balance;
-            localStorage.setItem('users', JSON.stringify(users));
+    auth.signOut();
+}
+
+// ตรวจสอบสถานะการล็อกอินอัตโนมัติ 
+auth.onAuthStateChanged(user => {
+    if (user) {
+        const username = user.email.replace(USER_DOMAIN, '');
+        loginSuccess(username, user.uid);
+    } else {
+        // หากไม่มีผู้ใช้ล็อกอิน และไม่ใช่อยู่ในหน้า admin ให้แสดงหน้า auth
+        if (document.getElementById('admin-screen').style.display !== 'block') {
+            document.getElementById('auth-screen').style.display = 'block';
+            document.getElementById('game-screen').style.display = 'none';
         }
     }
-    localStorage.removeItem('currentUser');
-    window.location.reload();
-}
+});
 
-function checkLoginStatus() {
-    const username = localStorage.getItem('currentUser');
-    if (username) { 
-        let users = JSON.parse(localStorage.getItem('users')) || {};
-        let initialBalance = users[username]?.balance || 0;
-        loginSuccess(username, initialBalance);
-    } else {
-        document.getElementById('auth-screen').style.display = 'block';
-    }
-}
-
-window.onload = checkLoginStatus;
-
-// --- Admin Panel Logic ---
+// ===============================================
+// 5. Admin Panel Logic (ใช้ Firestore)
+// ===============================================
 function adminLoginSuccess() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'block';
-    renderUserList();
+    renderUserList(); 
 }
 
 function adminLogout() {
-    window.location.reload(); // กลับไปหน้า login
+    window.location.reload(); 
 }
 
-function renderUserList() {
+async function renderUserList() {
     const userListElement = document.getElementById('user-list');
     userListElement.innerHTML = '';
     
-    const users = JSON.parse(localStorage.getItem('users')) || {};
-    
-    // สร้างรายการผู้ใช้ทุกคน ยกเว้นผู้ดูแลระบบ (Admin)
-    Object.keys(users).forEach(username => {
-        if (username === ADMIN_USER) return;
+    try {
+        // ดึงข้อมูลผู้ใช้ทั้งหมดจาก Firestore (ใช้คอลเลกชันเฉพาะ)
+        const snapshot = await db.collection(HOO_HEY_HOW_COLLECTION).get();
         
-        const user = users[username];
-        const listItem = document.createElement('li');
-        listItem.innerHTML = `
-            <span class="user-info">ผู้เล่น: ${username}</span>
-            <span class="user-balance">ยอดเงิน: ${user.balance} บาท</span>
-            <div class="admin-controls">
-                <input type="number" id="amount-${username}" placeholder="จำนวนเงิน">
-                <button class="deposit-btn-admin" onclick="updateUserBalance('${username}', true)">+ เติมเงิน</button>
-                <button class="withdraw-btn-admin" onclick="updateUserBalance('${username}', false)">- ถอนเงิน</button>
-            </div>
-        `;
-        userListElement.appendChild(listItem);
-    });
-    
-    const nonAdminUsers = Object.keys(users).filter(name => name !== ADMIN_USER);
-    if (nonAdminUsers.length === 0) {
-        userListElement.innerHTML = '<li>ไม่มีผู้เล่นในระบบ</li>';
+        let userCount = 0;
+        snapshot.forEach(doc => {
+            const username = doc.id;
+            const user = doc.data();
+            
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <span class="user-info">ชื่อผู้ใช้: <strong>${username}</strong></span> <span class="user-balance">ยอดเงิน: ${user.balance} บาท</span>
+                <div class="admin-controls">
+                    <input type="number" id="amount-${username}" placeholder="จำนวนเงิน">
+                    <button class="deposit-btn-admin" onclick="updateUserBalance('${username}', true)">+ เติมเงิน</button>
+                    <button class="withdraw-btn-admin" onclick="updateUserBalance('${username}', false)">- ถอนเงิน</button>
+                </div>
+            `;
+            userListElement.appendChild(listItem);
+            userCount++;
+        });
+
+        if (userCount === 0) {
+            userListElement.innerHTML = '<li>ไม่มีผู้เล่นในระบบ</li>';
+        }
+
+    } catch (error) {
+        userListElement.innerHTML = `<li>เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}</li>`;
+        console.error("Error loading user list:", error);
     }
 }
 
-function updateUserBalance(username, isDeposit) {
+async function updateUserBalance(username, isDeposit) {
     const amountInput = document.getElementById(`amount-${username}`);
     const amount = parseInt(amountInput.value);
 
@@ -621,53 +707,71 @@ function updateUserBalance(username, isDeposit) {
         alert('กรุณาใส่จำนวนเงินที่ถูกต้อง!');
         return;
     }
+    
+    // กำหนด reference ไปที่คอลเลกชันเฉพาะ
+    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(username);
 
-    let users = JSON.parse(localStorage.getItem('users')) || {};
-    if (!users[username]) {
-        alert(`ไม่พบผู้เล่นชื่อ ${username} ในระบบ`);
-        return;
-    }
+    try {
+        await db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(userRef);
+            if (!doc.exists) {
+                throw "ไม่พบผู้เล่น";
+            }
+            
+            let currentBalance = doc.data().balance;
+            let newBalance;
 
-    let currentBalance = users[username].balance;
-    let newBalance;
+            if (isDeposit) {
+                newBalance = currentBalance + amount;
+            } else {
+                if (currentBalance < amount) {
+                    throw "ยอดเงินไม่พอ";
+                }
+                newBalance = currentBalance - amount;
+            }
+            
+            transaction.update(userRef, { balance: newBalance });
+            
+            if (isDeposit) {
+                alert(`เติมเงินให้ ${username}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
+            } else {
+                alert(`ถอนเงินจาก ${username}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
+            }
+        });
 
-    if (isDeposit) {
-        newBalance = currentBalance + amount;
-        alert(`เติมเงินให้ ${username}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
-    } else {
-        if (currentBalance < amount) {
-            alert(`ยอดเงิน ${username} ไม่เพียงพอสำหรับการถอน ${amount} บาท (ยอดคงเหลือ ${currentBalance})`);
-            return;
+        // รีเฟรชรายการ
+        renderUserList();
+        
+        // อัปเดตยอดเงินในหน้าเกมหากผู้เล่นกำลังล็อกอินอยู่
+        if (currentUsername === username) {
+            balance = await getUserBalance(currentUsername); 
+            balanceDisplay.textContent = balance;
+            updateBetControls();
+            updateTotalCostDisplay();
         }
-        newBalance = currentBalance - amount;
-        alert(`ถอนเงินจาก ${username}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
+        
+        amountInput.value = ''; // ล้างค่าใน input
+
+    } catch (error) {
+        if (error === "ยอดเงินไม่พอ") {
+            alert(`ยอดเงิน ${username} ไม่เพียงพอสำหรับการถอน ${amount} บาท`);
+        } else {
+            alert(`เกิดข้อผิดพลาด: ${error}`);
+            console.error("Transaction failed: ", error);
+        }
     }
-    
-    // อัปเดตและบันทึก
-    users[username].balance = newBalance;
-    localStorage.setItem('users', JSON.stringify(users));
-    
-    // รีเฟรชรายการ
-    renderUserList();
-    
-    // **สำคัญ:** หากผู้เล่นที่ถูกปรับยอดเงินกำลังล็อกอินอยู่ ให้รีเฟรชยอดเงินในหน้าเกม
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser === username) {
-        // ต้องอัปเดตตัวแปร 'balance' ของผู้เล่นที่ล็อกอินอยู่
-        balance = newBalance; 
-        // ต้องอัปเดตการแสดงผล
-        const usernameDisplay = document.getElementById('usernameDisplay');
-        usernameDisplay.textContent = `ยอดเงิน ${username}:`; 
-        balanceDisplay.textContent = balance;
-        updateBetControls();
-    }
-    
-    // ล้างค่าใน input
-    amountInput.value = '';
+}
+
+async function getUserBalance(username) {
+    const doc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(username).get();
+    return doc.exists ? doc.data().balance : 0;
 }
 
 
-// --- ส่วนจัดการเกม ---
+// ===============================================
+// 6. Game Play and Database Update
+// ===============================================
+
 const animals = ['น้ำเต้า','ปู','ปลา','เสือ','ไก่','กุ้ง'];
 const emojis = ['🍐','🦀','🐟','🐯','🐔','🦐'];
 const animalValues = { 'น้ำเต้า': 1, 'ปู': 2, 'ปลา': 3, 'เสือ': 4, 'ไก่': 5, 'กุ้ง': 6 };
@@ -680,6 +784,24 @@ const rollSound = document.getElementById('rollSound');
 const winSound = document.getElementById('winSound');
 
 
+// **** ฟังก์ชันใหม่: อัปเดตยอดรวมที่ต้องจ่าย ****
+function updateTotalCostDisplay() {
+    const amountPerBet = parseInt(betInput.value) || 0;
+    const totalCost = amountPerBet * activeBets.size;
+    document.querySelector('#totalBetDisplay span').textContent = totalCost.toLocaleString();
+    
+    // ตรวจสอบว่ายอดเดิมพันรวมเกินยอดเงินหรือไม่
+    const rollButton = document.getElementById('roll');
+    if (totalCost > balance && balance > 0) {
+        rollButton.disabled = true;
+        rollButton.textContent = '❌ เงินเดิมพันรวมเกินยอดเงิน!';
+    } else if (balance > 0) {
+        rollButton.disabled = false;
+        rollButton.textContent = 'หมุนลูกเต๋า';
+    }
+}
+// **********************************************
+
 function setBet(amount) {
     let currentBet = parseInt(betInput.value) || 0;
     let newBet = currentBet + amount;
@@ -691,12 +813,16 @@ function setBet(amount) {
     if (balance === 0) newBet = 0;
 
     betInput.value = newBet;
+    updateTotalCostDisplay(); // <--- เรียกใช้ทุกครั้งที่เปลี่ยนจำนวนเงิน
 }
 
 function setMaxBet() {
     let max = Math.min(balance, maxBetDefault);
     betInput.value = max;
+    updateTotalCostDisplay(); // <--- เรียกใช้ทุกครั้งที่เปลี่ยนจำนวนเงิน
 }
+
+betInput.addEventListener('input', updateTotalCostDisplay); // ดักจับการพิมพ์ตัวเลข
 
 const bettingButtons = document.querySelectorAll('[data-bet-type]');
 bettingButtons.forEach(btn => {
@@ -709,129 +835,193 @@ bettingButtons.forEach(btn => {
             activeBets.delete(key);
             btn.classList.remove('selected');
         } else {
+            // โค้ดสำหรับ High/Low/Triple: อนุญาตให้เลือกได้แค่ 1 ตัวในกลุ่มนี้
+            if (type !== 'single' && (activeBets.has('high_low-High') || activeBets.has('high_low-Low') || activeBets.has('triple_any-Any'))) {
+                // หากมีการเลือก High/Low/Triple ตัวอื่นอยู่แล้ว ให้ยกเลิกการเลือกเก่าก่อน
+                let conflictingKey = Array.from(activeBets.keys()).find(k => k.startsWith('high_low') || k.startsWith('triple_any'));
+                if (conflictingKey) {
+                    activeBets.get(conflictingKey).classList.remove('selected');
+                    activeBets.delete(conflictingKey);
+                }
+            }
+            
             activeBets.set(key, btn);
             btn.classList.add('selected');
         }
+        
+        updateTotalCostDisplay(); // <--- เรียกใช้ทุกครั้งที่เลือก/ยกเลิก
     });
 });
 
 
-document.getElementById('roll').addEventListener('click', () => {
+// ===============================================
+// 7. โค้ด Roll Dice พร้อม Transaction เพื่อความปลอดภัย
+// ===============================================
+
+document.getElementById('roll').addEventListener('click', async () => {
     const currentBetAmount = parseInt(betInput.value); 
-    const username = localStorage.getItem('currentUser');
 
     if (activeBets.size === 0) { alert('กรุณาเลือกรูปแบบการเดิมพันอย่างน้อย 1 อย่าง!'); return; }
-    if (isNaN(currentBetAmount) || currentBetAmount < minBet) { alert(`กรุณาใส่จำนวนเงินเดิมพัน (ขั้นต่ำ ${minBet} บาท)!`); return; }
     
     const totalBetCost = currentBetAmount * activeBets.size;
-
+    
+    // ตรวจสอบยอดเงินอีกครั้งก่อนเริ่ม Transaction
     if (totalBetCost > balance) { 
-        alert(`ยอดเงินไม่เพียงพอสำหรับการเดิมพันทั้งหมด ${totalBetCost} บาท! กรุณาลดจำนวนเงินเดิมพันหรือรูปแบบการเดิมพันที่เลือก`); 
+        alert(`ยอดเงินไม่เพียงพอสำหรับการเดิมพันทั้งหมด ${totalBetCost} บาท!`); 
+        updateBetControls(); 
+        updateTotalCostDisplay();
         return; 
     }
 
+    // ************ การเตรียม UI ก่อน Transaction ************
+    // หักยอดเงินเดิมพันออกจากตัวแปร balance ในหน้าจอ (UI) ก่อน
     balance -= totalBetCost;
     balanceDisplay.textContent = balance;
     diceArea.textContent = 'หมุน...';
     result.textContent = '';
     rollSound.currentTime = 0;
     rollSound.play();
-  
-    const users = JSON.parse(localStorage.getItem('users')) || {};
-    users[username].balance = balance;
-    localStorage.setItem('users', JSON.stringify(users));
+    document.getElementById('roll').disabled = true; // ป้องกันการกดซ้ำ
 
-    setTimeout(() => {
-        const diceResults = []; 
-        const diceValues = []; 
-        for (let i = 0; i < 3; i++) {
-            const randomIndex = Math.floor(Math.random() * animals.length);
-            const animalName = animals[randomIndex];
-            diceResults.push(animalName);
-            diceValues.push(animalValues[animalName]);
-        }
-        
-        diceArea.innerHTML = diceResults.map(name => emojis[animals.indexOf(name)]).join(' ');
+    try {
+        // ************ 1. บันทึกยอดเงินที่ถูกหักลงใน Firestore ด้วย Transaction ************
+        await db.runTransaction(async (transaction) => {
+            const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentUsername);
+            const userDoc = await transaction.get(userRef);
 
-        const sum = diceValues.reduce((a, b) => a + b, 0);
-        const counts = diceResults.reduce((acc, name) => {
-            acc[name] = (acc[name] || 0) + 1;
-            return acc;
-        }, {});
-        
-        const isTriple = Object.values(counts).some(count => count === 3);
-        const tripleAnimal = isTriple ? diceResults[0] : null;
-        const isHigh = sum >= 11 && sum <= 17;
-        const isLow = sum >= 4 && sum <= 10;
-        
-        let totalWinnings = 0;
-        let winDetails = [];
-        let didWin = false;
-
-        activeBets.forEach((element, key) => {
-            const [type, value] = key.split('-');
-            let profit = 0;
-            let resultMessage = '';
-
-            switch(type) {
-                case 'single':
-                    const hitCount = counts[value] || 0;
-                    if (hitCount > 0) {
-                        profit = currentBetAmount * hitCount; 
-                        resultMessage = `ชนะ แทงเดี่ยว ${value} ออก ${hitCount} ตัว (กำไร ${profit} บาท)`;
-                    }
-                    break;
-
-                case 'high_low':
-                    const betIsHigh = value === 'High';
-                    
-                    if (isTriple) {
-                        resultMessage = `แพ้ ตองออก (สูง/ต่ำ แพ้ทุกกรณี)`;
-                    } else if ((betIsHigh && isHigh) || (!betIsHigh && isLow)) {
-                        profit = currentBetAmount * 1;
-                        resultMessage = `ชนะ แทง ${value} (แต้มรวม ${sum}) (กำไร ${profit} บาท)`;
-                    }
-                    break;
-                
-                case 'triple_any':
-                    if (isTriple) {
-                        profit = currentBetAmount * 7; 
-                        resultMessage = `ชนะ ตอง ${tripleAnimal} (กำไร ${profit} บาท)`;
-                    }
-                    break;
+            if (!userDoc.exists) {
+                throw new Error("ไม่พบข้อมูลผู้เล่นในระบบฐานข้อมูล");
             }
             
-            if (profit > 0) {
-                totalWinnings += profit;
-                didWin = true;
-                winDetails.push(resultMessage);
-            } else if (resultMessage) {
-                 winDetails.push(resultMessage);
+            let dbBalance = userDoc.data().balance;
+            let newDbBalance = dbBalance - totalBetCost;
+
+            if (newDbBalance < 0) {
+                // หากเกิดความผิดพลาดจาก Race Condition ให้ยกเลิก
+                throw new Error("ยอดเงินในฐานข้อมูลไม่พอ (Race Condition)");
             }
+
+            // บันทึกยอดเงินที่ถูกหักลงใน DB
+            transaction.update(userRef, { balance: newDbBalance });
+            
+            // อัปเดตตัวแปรใน JS ด้วยยอดเงินที่ถูกหักจาก DB เพื่อนำไปใช้ต่อ
+            balance = newDbBalance;
         });
+
+        // ************ 2. ดำเนินการหมุนลูกเต๋าและคำนวณผล ************
+        setTimeout(async () => { 
+            const diceResults = []; 
+            const diceValues = []; 
+            for (let i = 0; i < 3; i++) {
+                const randomIndex = Math.floor(Math.random() * animals.length);
+                const animalName = animals[randomIndex];
+                diceResults.push(animalName);
+                diceValues.push(animalValues[animalName]);
+            }
+            
+            diceArea.innerHTML = diceResults.map(name => emojis[animals.indexOf(name)]).join(' ');
+
+            const sum = diceValues.reduce((a, b) => a + b, 0);
+            const counts = diceResults.reduce((acc, name) => {
+                acc[name] = (acc[name] || 0) + 1;
+                return acc;
+            }, {});
+            
+            const isTriple = Object.values(counts).some(count => count === 3);
+            const tripleAnimal = isTriple ? diceResults[0] : null;
+            const isHigh = sum >= 11 && sum <= 17;
+            const isLow = sum >= 4 && sum <= 10;
+            
+            let totalWinnings = 0;
+            let winDetails = [];
+            let didWin = false;
+
+            activeBets.forEach((element, key) => {
+                const [type, value] = key.split('-');
+                let profit = 0;
+                let resultMessage = '';
+
+                switch(type) {
+                    case 'single':
+                        const hitCount = counts[value] || 0;
+                        if (hitCount > 0) {
+                            profit = currentBetAmount * hitCount; 
+                            resultMessage = `ชนะ แทงเดี่ยว ${value} ออก ${hitCount} ตัว (กำไร ${profit} บาท)`;
+                        }
+                        break;
+
+                    case 'high_low':
+                        const betIsHigh = value === 'High';
+                        
+                        if (isTriple) {
+                            resultMessage = `แพ้ ตองออก (สูง/ต่ำ แพ้ทุกกรณี)`;
+                        } else if ((betIsHigh && isHigh) || (!betIsHigh && isLow)) {
+                            profit = currentBetAmount * 1;
+                            resultMessage = `ชนะ แทง ${value} (แต้มรวม ${sum}) (กำไร ${profit} บาท)`;
+                        }
+                        break;
+                    
+                    case 'triple_any':
+                        if (isTriple) {
+                            profit = currentBetAmount * 7; 
+                            resultMessage = `ชนะ ตอง ${tripleAnimal} (กำไร ${profit} บาท)`;
+                        }
+                        break;
+                }
+                
+                if (profit > 0) {
+                    totalWinnings += profit;
+                    didWin = true;
+                    winDetails.push(resultMessage);
+                } else if (resultMessage) {
+                    winDetails.push(resultMessage);
+                }
+            });
+            
+            const totalPayout = totalBetCost + totalWinnings; 
+            balance += totalWinnings; // เพิ่ม/ลดเฉพาะกำไร/ขาดทุน
+            
+            if (didWin) {
+                result.textContent = `🎉 ชนะ! ได้รับเงินคืนทั้งหมด ${totalPayout} บาท (กำไรสุทธิ ${totalWinnings} บาท)\nรายละเอียด: ${winDetails.join(' | ')}`;
+                winSound.currentTime = 0;
+                winSound.play();
+            } else {
+                result.textContent = `เสียใจ! ไม่มีรายการเดิมพันที่ชนะ 😢 (เสีย ${totalBetCost} บาท)`;
+            }
+
+            balanceDisplay.textContent = balance;
+            
+            activeBets.forEach(element => element.classList.remove('selected'));
+            activeBets.clear();
+            
+            // ************ 3. บันทึกยอดเงินสุดท้ายลงใน Firestore ด้วย Transaction ************
+            await db.runTransaction(async (transaction) => {
+                const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentUsername);
+                // อัปเดตยอดเงินสุดท้ายลงใน DB
+                transaction.update(userRef, { balance: balance });
+            });
+            
+            updateBetControls();
+            updateTotalCostDisplay(); // รีเซ็ตยอดรวมเป็น 0
+            document.getElementById('roll').disabled = false; // เปิดปุ่ม
+
+        }, 900); // end setTimeout
+
+    } catch (error) {
+        // หาก Transaction ล้มเหลว (เช่น หักเงินไม่ได้, DB Error)
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล! ยอดเงินอาจไม่ถูกหัก/เพิ่ม กรุณาลองใหม่');
         
-        const totalPayout = totalBetCost + totalWinnings; 
-        balance += totalPayout;
-
-        if (didWin) {
-            result.textContent = `🎉 ชนะ! ได้รับเงินคืนทั้งหมด ${totalPayout} บาท (กำไรสุทธิ ${totalWinnings} บาท)\nรายละเอียด: ${winDetails.join(' | ')}`;
-            winSound.currentTime = 0;
-            winSound.play();
-        } else {
-            result.textContent = `เสียใจ! ไม่มีรายการเดิมพันที่ชนะ 😢 (เสีย ${totalBetCost} บาท)`;
-        }
-
+        // เราต้องดึงยอดเงินล่าสุดจาก DB กลับมา เพื่อซิงค์ข้อมูล
+        const latestBalance = await getUserBalance(currentUsername);
+        balance = latestBalance; 
+        
         balanceDisplay.textContent = balance;
-        
-        activeBets.forEach(element => element.classList.remove('selected'));
-        activeBets.clear();
-        
-        users[username].balance = balance;
-        localStorage.setItem('users', JSON.stringify(users));
-        
+        console.error("Game Roll Transaction Failed: ", error);
+        document.getElementById('roll').disabled = false;
         updateBetControls();
-
-    }, 900);
+        updateTotalCostDisplay(); // รีเซ็ตยอดรวมเป็น 0
+        result.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ!';
+    }
 });
 </script>
 </body>
