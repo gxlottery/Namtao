@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎲 เกมน้ำเต้าปูปลา</title>
+
+<style>
+  /* CSS สำหรับพื้นหลังและ Fonts */
+  @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap');
+  body {
+    font-family: 'Prompt', sans-serif;
+    text-align: center;
+    background: linear-gradient(135deg, #a71d31, #3f0d12);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: #fff;
+    padding: 20px;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  h1 {
+    color: gold;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 5px rgba(255, 215, 0, 0.5);
+    margin-bottom: 20px;
+  }
+  
+  /* CSS สำหรับส่วน Login/Sign-Up */
+  .auth-container {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 400px;
+    margin: 50px auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  .auth-container input {
+    width: 90%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+    color: #333;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
+  .auth-container button {
+    display: block;
+    width: 90%;
+    margin: 15px auto 5px auto;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease-out;
+    box-shadow: 
+      0 10px 20px rgba(0, 0, 0, 0.5), 
+      0 5px 10px rgba(0, 0, 0, 0.3),
+      inset 0 -5px 10px rgba(0, 0, 0, 0.3);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+    text-align: center;
+    text-decoration: none; 
+  }
+  #auth-button {
+      background: linear-gradient(145deg, #FFDC00, #FF851B);
+      color: black;
+  }
+  .toggle-link {
+    color: #ffd700;
+    cursor: pointer;
+    text-decoration: none;
+    margin-top: 15px;
+    display: block;
+    font-size: 14px;
+    transition: 0.1s;
+  }
+  
+  /* CSS สำหรับ Admin Panel */
+  #admin-screen {
+      display: none;
+      max-width: 800px;
+      margin: 20px auto;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      border-radius: 15px;
+  }
+  #admin-screen h2 {
+      color: #33ff33;
+      text-shadow: 0 0 8px rgba(51, 255, 51, 0.5);
+  }
+  #user-list {
+      list-style: none;
+      padding: 0;
+      text-align: left;
+      margin-top: 20px;
+  }
+  #user-list li {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+  .user-info {
+      font-weight: bold;
+      color: #fff;
+      min-width: 150px;
+  }
+  .user-balance {
+      color: #FFDC00;
+      margin-right: 20px;
+  }
+  .admin-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+  }
+  .admin-controls input[type="number"] {
+      padding: 8px;
+      width: 80px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      color: #333;
+  }
+  .admin-controls button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.1s;
+  }
+  .deposit-btn-admin { background-color: #33ff33; color: black; }
+  .withdraw-btn-admin { background-color: #ff4136; color: white; }
+  .logout-btn-admin { background-color: #ccc; color: black; margin-top: 20px; width: 100%; max-width: 200px; display: block; margin-left: auto; margin-right: auto; }
+
+  /* CSS สำหรับหน้าเกม */
+  #game-screen { display: none; }
+  #balance {
+    background: rgba(255,255,255,0.2);
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    font-size: 18px;
+    margin-bottom: 30px;
+    font-weight: bold;
+    color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #balance button {
+    margin-left: 10px; 
+    padding: 5px 10px; 
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    transition: 0.1s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+  .logout-btn { background: #c30000; color: white; }
+  
+  /* CSS ใหม่: สำหรับปุ่มบริการ (เติมเงิน/ถอนเงิน) */
+  .service-buttons {
+      margin-bottom: 20px;
+      margin-top: -10px; /* ขยับขึ้นเล็กน้อย */
+  }
+  .service-btn {
+      display: inline-block;
+      padding: 12px 25px;
+      border-radius: 30px;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease-out;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+      border: 2px solid white;
+  }
+  .service-line-btn {
+      background: linear-gradient(145deg, #00C300, #3CFF3C); 
+      color: black;
+      border-color: #3CFF3C;
+  }
+  .service-btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  }
+  
+  /* Layout สำหรับปุ่มเดิมพันทั้งหมด */
+  .betting-area {
+      max-width: 500px;
+      margin: 0 auto 25px auto;
+  }
+  /* ปุ่มเดิมพันเดี่ยว (Single Bets) */
+  .single-bets {
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  .bet-btn-base {
+    width: 100%; 
+    padding-top: 100%; 
+    position: relative;
+    font-size: 45px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    color: white;
+    font-weight: bold;
+    box-shadow: 
+      0 12px 25px rgba(0,0,0,0.5), 
+      0 6px 12px rgba(0,0,0,0.3),  
+      inset 0 -6px 15px rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    line-height: 0; 
+  }
+  .bet-btn-base > span {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 1;
+  }
+  .bet-btn-base:hover {
+    transform: translateY(-4px) scale(1.03);
+  }
+  .bet-btn-base.selected {
+    transform: translateY(-2px) scale(1.08); 
+    box-shadow: 
+      0 0 30px #FFD700, 
+      0 15px 30px rgba(0,0,0,0.8), 
+      inset 0 -6px 15px rgba(255, 215, 0, 0.7); 
+    outline: 4px solid gold; 
+    outline-offset: -4px;
+  }
+  /* สีปุ่มเดิมพันเดี่ยว */
+  .bet-btn-single:nth-child(1){background: linear-gradient(145deg,#0074D9,#7FDBFF);} /* น้ำเต้า */
+  .bet-btn-single:nth-child(2){background: linear-gradient(145deg,#FF4136,#FF851B);} /* ปู */
+  .bet-btn-single:nth-child(3){background: linear-gradient(145deg,#2ECC40,#01FF70);} /* ปลา */
+  .bet-btn-single:nth-child(4){background: linear-gradient(145deg,#B10DC9,#F012BE);} /* เสือ */
+  .bet-btn-single:nth-child(5){background: linear-gradient(145deg,#FFDC00,#FF851B);} /* ไก่ */
+  .bet-btn-single:nth-child(6){background: linear-gradient(145deg,#39CCCC,#7FDBFF);} /* กุ้ง */
+  
+  /* ปุ่มเดิมพันรวม (High/Low/Triple) */
+  .compound-bets {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      margin-top: 30px;
+  }
+  .bet-btn-compound {
+      flex: 1;
+      padding: 15px 10px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+      min-height: 60px;
+      box-shadow: 
+        0 8px 15px rgba(0,0,0,0.4), 
+        inset 0 -4px 8px rgba(0,0,0,0.3);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+  }
+  .bet-btn-compound.selected {
+      transform: translateY(-2px) scale(1.05); 
+      outline: 4px solid #fff; 
+      outline-offset: -4px;
+  }
+  .bet-high { background: linear-gradient(145deg, #FF69B4, #FFB6C1); } /* High */
+  .bet-low { background: linear-gradient(145deg, #1E90FF, #87CEFA); } /* Low */
+  .bet-triple-any { background: linear-gradient(145deg, #8B0000, #FF0000); } /* Triple (Any) */
+
+  .bet-control { margin-bottom: 25px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
+  .bet-control label { font-size: 16px; font-weight: bold; }
+  #betAmount { width: 120px; padding: 10px; border-radius: 10px; border: 3px solid gold; text-align: center; font-size: 18px; color: black; background-color: #f9f9f9; box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2); }
+  .bet-btn { padding: 10px 15px; border: none; border-radius: 10px; background: #FFDC00; color: black; cursor: pointer; transition: all 0.1s ease; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+  
+  button#roll {
+    background: gold;
+    color: black;
+    padding: 18px 40px;
+    border: none;
+    border-radius: 20px;
+    font-size: 22px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    box-shadow: 
+      0 15px 30px rgba(255,215,0,0.6), 
+      0 8px 15px rgba(255,215,0,0.4),   
+      inset 0 -8px 20px rgba(0,0,0,0.3);
+    position: relative;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  button#roll:disabled {
+      background: #ccc;
+      box-shadow: none;
+      transform: none;
+      cursor: not-allowed;
+  }
+  .dice { font-size: 60px; margin: 20px 0; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+  .result { margin-top: 15px; font-size: 24px; color: #33ff33; text-shadow: 0 0 15px #33ff33, 0 0 5px #33ff33; font-weight: bold; }
+  
+  /* Responsive Design */
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    .single-bets { max-width: none; }
+    .bet-btn-base { font-size: 35px; border-radius: 20px; }
+    .bet-control { flex-direction: column; gap: 8px; }
+    #betAmount { width: 100%; max-width: 150px; }
+    .compound-bets { flex-direction: column; }
+    #user-list li { flex-direction: column; align-items: flex-start; }
+    .admin-controls { width: 100%; justify-content: space-between; }
+    .admin-controls input[type="number"] { width: 40%; }
+    .admin-controls button { flex: 1; }
+  }
+</style>
+</head>
+<body>
+  
+  <div id="auth-screen">
+    <h1>เข้าสู่ระบบ / สมัครสมาชิก 🎯</h1>
+    <div class="auth-container">
+      <h2 id="auth-title">เข้าสู่ระบบ</h2>
+      <input type="text" id="username" placeholder="ชื่อผู้ใช้ (Username)" required>
+      <input type="password" id="password" placeholder="รหัสผ่าน (Password)" required>
+      
+      <div id="signup-fields" style="display:none;">
+          <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required>
+      </div>
+
+      <button id="auth-button" onclick="handleAuth()">เข้าสู่ระบบ</button>
+      <p id="error-message" style="color: red; margin-top: 10px; font-size: 14px;"></p>
+      
+      <a class="toggle-link" onclick="toggleAuthMode()">ยังไม่มีบัญชี? สมัครสมาชิกที่นี่</a>
+    </div>
+  </div>
+  
+  <div id="admin-screen">
+      <h2>🛠️ แผงควบคุมผู้ดูแลระบบ</h2>
+      <p style="color: orange;">**คำเตือน:** ระบบนี้ไม่ปลอดภัยและไม่ควรใช้กับเงินจริง</p>
+      
+      <ul id="user-list">
+          </ul>
+      
+      <button onclick="adminLogout()" class="logout-btn-admin">ออกจากระบบแอดมิน</button>
+  </div>
+  
+  <div id="game-screen">
+    <h1>🎲 เกมน้ำเต้าปูปลา 🎲</h1>
+    
+    <div class="service-buttons">
+        <a href="https://lin.ee/Mm1caQx" target="_blank" class="service-btn service-line-btn">
+            💸 เติมเงิน/ถอนเงิน
+        </a>
+    </div>
+    
+    <div id="balance">
+        💰 <span id="usernameDisplay">ยอดเงิน:</span> <span id="playerBalance">0</span> บาท
+        <button onclick="logout()" class="logout-btn">ออกจากระบบ</button>
+    </div>
+
+    <div class="betting-area">
+        <p>แทงเดี่ยว (จ่าย 1-3 เท่า):</p>
+        <div class="single-bets">
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="น้ำเต้า"><span>🍐</span></button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ปู"><span>🦀</span></button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ปลา"><span>🐟</span></button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="เสือ"><span>🐯</span></button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ไก่"><span>🐔</span></button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="กุ้ง"><span>🦐</span></button>
+        </div>
+
+        <p>แทงรวม (สูง/ต่ำ, ตอง):</p>
+        <div class="compound-bets">
+            <button class="bet-btn-compound bet-high" data-bet-type="high_low" data-bet-value="High">
+                สูง (11-17)<br>จ่าย 1:1
+            </button>
+            <button class="bet-btn-compound bet-low" data-bet-type="high_low" data-bet-value="Low">
+                ต่ำ (4-10)<br>จ่าย 1:1
+            </button>
+            <button class="bet-btn-compound bet-triple-any" data-bet-type="triple_any" data-bet-value="Any">
+                ตอง (ออก 3 เหมือนกัน)<br>จ่าย 7:1
+            </button>
+        </div>
+    </div>
+
+    <div class="bet-control">
+      <label for="betAmount">จำนวนเงินเดิมพัน (ต่อการเลือก):</label>
+      <input type="number" id="betAmount" value="10" min="0" max="1000">
+      <button class="bet-btn" onclick="setBet(10)">+10</button>
+      <button class="bet-btn" onclick="setBet(50)">+50</button>
+      <button class="bet-btn" onclick="setMaxBet()">เดิมพันสูงสุด</button>
+    </div>
+    
+    <button id="roll">หมุนลูกเต๋า</button>
+
+    <div id="diceArea" class="dice"></div>
+    <div id="result" class="result"></div>
+  </div>
+
+<audio id="rollSound" src="https://www.soundjay.com/misc/sounds/dice-roll-1.mp3"></audio>
+<audio id="winSound" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
+
+<script>
+// --- Admin Credentials ---
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = '03774570'; // รหัสผ่านตามที่ร้องขอ
+
+// --- ส่วนจัดการ Auth และ Login ---
+let isLoginMode = true;
+const balanceDisplay = document.getElementById('playerBalance');
+const betInput = document.getElementById('betAmount'); 
+let balance = 0;
+const minBet = 10;
+const maxBetDefault = 1000;
+
+function toggleAuthMode() {
+    isLoginMode = !isLoginMode;
+    document.getElementById('auth-title').textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
+    document.getElementById('auth-button').textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
+    document.getElementById('signup-fields').style.display = isLoginMode ? 'none' : 'block';
+    document.getElementById('error-message').textContent = '';
+    document.querySelector('.toggle-link').textContent = isLoginMode 
+        ? 'ยังไม่มีบัญชี? สมัครสมาชิกที่นี่' 
+        : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบที่นี่';
+}
+
+function handleAuth() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('error-message');
+    errorMessage.textContent = ''; 
+
+    if (!username || !password) {
+        errorMessage.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+        return;
+    }
+    
+    // --- 1. ตรวจสอบ Admin Login ---
+    if (username === ADMIN_USER && password === ADMIN_PASS) {
+        adminLoginSuccess();
+        return;
+    }
+    
+    // --- 2. ตรวจสอบ User Login/Sign Up ---
+    let users = JSON.parse(localStorage.getItem('users')) || {};
+
+    if (isLoginMode) {
+        // LOGIN
+        if (users[username] && users[username].password === password) {
+            // ป้องกันผู้เล่นล็อกอินด้วยชื่อ Admin ถ้าไม่ใช้รหัสผ่าน Admin
+            if (username === ADMIN_USER) {
+                 errorMessage.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+                 return;
+            }
+            loginSuccess(username, users[username].balance);
+        } else {
+            errorMessage.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+        }
+    } else {
+        // SIGN UP
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        if (password.length < 4) {
+            errorMessage.textContent = 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร';
+            return;
+        }
+        if (password !== confirmPassword) {
+            errorMessage.textContent = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
+            return;
+        }
+        if (users[username]) {
+            errorMessage.textContent = 'ชื่อผู้ใช้นี้มีคนใช้แล้ว';
+            return;
+        }
+        // ป้องกันไม่ให้สมัครสมาชิกด้วยชื่อ Admin
+        if (username === ADMIN_USER) {
+             errorMessage.textContent = 'ชื่อผู้ใช้นี้ถูกจองไว้แล้ว';
+             return;
+        }
+        
+        users[username] = { password: password, balance: 0 }; 
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        loginSuccess(username, 0); 
+    }
+}
+
+function loginSuccess(username, initialBalance) {
+    localStorage.setItem('currentUser', username);
+    balance = initialBalance;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('admin-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    
+    const usernameDisplay = document.getElementById('usernameDisplay');
+    usernameDisplay.textContent = `ยอดเงิน ${username}:`; 
+    
+    balanceDisplay.textContent = balance;
+    updateBetControls();
+}
+
+function updateBetControls() {
+    let defaultBet = Math.min(balance > 0 ? 10 : 0, balance);
+    betInput.value = defaultBet;
+    betInput.min = balance > 0 ? minBet : 0;
+    betInput.max = Math.min(balance, maxBetDefault);
+
+    const rollButton = document.getElementById('roll');
+    if (balance === 0) {
+        rollButton.disabled = true;
+        rollButton.textContent = '⚠️ เติมเงินเพื่อเริ่มเล่น';
+    } else {
+        rollButton.disabled = false;
+        rollButton.textContent = 'หมุนลูกเต๋า';
+    }
+}
+
+function logout() {
+    const username = localStorage.getItem('currentUser');
+    if (username) { 
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+        if (users[username]) {
+            users[username].balance = balance;
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+    }
+    localStorage.removeItem('currentUser');
+    window.location.reload();
+}
+
+function checkLoginStatus() {
+    const username = localStorage.getItem('currentUser');
+    if (username) { 
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+        let initialBalance = users[username]?.balance || 0;
+        loginSuccess(username, initialBalance);
+    } else {
+        document.getElementById('auth-screen').style.display = 'block';
+    }
+}
+
+window.onload = checkLoginStatus;
+
+// --- Admin Panel Logic ---
+function adminLoginSuccess() {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('admin-screen').style.display = 'block';
+    renderUserList();
+}
+
+function adminLogout() {
+    window.location.reload(); // กลับไปหน้า login
+}
+
+function renderUserList() {
+    const userListElement = document.getElementById('user-list');
+    userListElement.innerHTML = '';
+    
+    const users = JSON.parse(localStorage.getItem('users')) || {};
+    
+    // สร้างรายการผู้ใช้ทุกคน ยกเว้นผู้ดูแลระบบ (Admin)
+    Object.keys(users).forEach(username => {
+        if (username === ADMIN_USER) return;
+        
+        const user = users[username];
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+            <span class="user-info">ผู้เล่น: ${username}</span>
+            <span class="user-balance">ยอดเงิน: ${user.balance} บาท</span>
+            <div class="admin-controls">
+                <input type="number" id="amount-${username}" placeholder="จำนวนเงิน">
+                <button class="deposit-btn-admin" onclick="updateUserBalance('${username}', true)">+ เติมเงิน</button>
+                <button class="withdraw-btn-admin" onclick="updateUserBalance('${username}', false)">- ถอนเงิน</button>
+            </div>
+        `;
+        userListElement.appendChild(listItem);
+    });
+    
+    const nonAdminUsers = Object.keys(users).filter(name => name !== ADMIN_USER);
+    if (nonAdminUsers.length === 0) {
+        userListElement.innerHTML = '<li>ไม่มีผู้เล่นในระบบ</li>';
+    }
+}
+
+function updateUserBalance(username, isDeposit) {
+    const amountInput = document.getElementById(`amount-${username}`);
+    const amount = parseInt(amountInput.value);
+
+    if (isNaN(amount) || amount <= 0) {
+        alert('กรุณาใส่จำนวนเงินที่ถูกต้อง!');
+        return;
+    }
+
+    let users = JSON.parse(localStorage.getItem('users')) || {};
+    if (!users[username]) {
+        alert(`ไม่พบผู้เล่นชื่อ ${username} ในระบบ`);
+        return;
+    }
+
+    let currentBalance = users[username].balance;
+    let newBalance;
+
+    if (isDeposit) {
+        newBalance = currentBalance + amount;
+        alert(`เติมเงินให้ ${username}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
+    } else {
+        if (currentBalance < amount) {
+            alert(`ยอดเงิน ${username} ไม่เพียงพอสำหรับการถอน ${amount} บาท (ยอดคงเหลือ ${currentBalance})`);
+            return;
+        }
+        newBalance = currentBalance - amount;
+        alert(`ถอนเงินจาก ${username}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
+    }
+    
+    // อัปเดตและบันทึก
+    users[username].balance = newBalance;
+    localStorage.setItem('users', JSON.stringify(users));
+    
+    // รีเฟรชรายการ
+    renderUserList();
+    
+    // **สำคัญ:** หากผู้เล่นที่ถูกปรับยอดเงินกำลังล็อกอินอยู่ ให้รีเฟรชยอดเงินในหน้าเกม
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser === username) {
+        // ต้องอัปเดตตัวแปร 'balance' ของผู้เล่นที่ล็อกอินอยู่
+        balance = newBalance; 
+        // ต้องอัปเดตการแสดงผล
+        const usernameDisplay = document.getElementById('usernameDisplay');
+        usernameDisplay.textContent = `ยอดเงิน ${username}:`; 
+        balanceDisplay.textContent = balance;
+        updateBetControls();
+    }
+    
+    // ล้างค่าใน input
+    amountInput.value = '';
+}
+
+
+// --- ส่วนจัดการเกม ---
+const animals = ['น้ำเต้า','ปู','ปลา','เสือ','ไก่','กุ้ง'];
+const emojis = ['🍐','🦀','🐟','🐯','🐔','🦐'];
+const animalValues = { 'น้ำเต้า': 1, 'ปู': 2, 'ปลา': 3, 'เสือ': 4, 'ไก่': 5, 'กุ้ง': 6 };
+
+const activeBets = new Map(); 
+
+const diceArea = document.getElementById('diceArea');
+const result = document.getElementById('result');
+const rollSound = document.getElementById('rollSound');
+const winSound = document.getElementById('winSound');
+
+
+function setBet(amount) {
+    let currentBet = parseInt(betInput.value) || 0;
+    let newBet = currentBet + amount;
+
+    if (newBet < minBet && balance > 0) newBet = minBet; 
+    if (newBet > balance || newBet > maxBetDefault) {
+      newBet = Math.min(balance, maxBetDefault);
+    }
+    if (balance === 0) newBet = 0;
+
+    betInput.value = newBet;
+}
+
+function setMaxBet() {
+    let max = Math.min(balance, maxBetDefault);
+    betInput.value = max;
+}
+
+const bettingButtons = document.querySelectorAll('[data-bet-type]');
+bettingButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const type = btn.dataset.betType;
+        const value = btn.dataset.betValue;
+        const key = `${type}-${value}`;
+
+        if (activeBets.has(key)) {
+            activeBets.delete(key);
+            btn.classList.remove('selected');
+        } else {
+            activeBets.set(key, btn);
+            btn.classList.add('selected');
+        }
+    });
+});
+
+
+document.getElementById('roll').addEventListener('click', () => {
+    const currentBetAmount = parseInt(betInput.value); 
+    const username = localStorage.getItem('currentUser');
+
+    if (activeBets.size === 0) { alert('กรุณาเลือกรูปแบบการเดิมพันอย่างน้อย 1 อย่าง!'); return; }
+    if (isNaN(currentBetAmount) || currentBetAmount < minBet) { alert(`กรุณาใส่จำนวนเงินเดิมพัน (ขั้นต่ำ ${minBet} บาท)!`); return; }
+    
+    const totalBetCost = currentBetAmount * activeBets.size;
+
+    if (totalBetCost > balance) { 
+        alert(`ยอดเงินไม่เพียงพอสำหรับการเดิมพันทั้งหมด ${totalBetCost} บาท! กรุณาลดจำนวนเงินเดิมพันหรือรูปแบบการเดิมพันที่เลือก`); 
+        return; 
+    }
+
+    balance -= totalBetCost;
+    balanceDisplay.textContent = balance;
+    diceArea.textContent = 'หมุน...';
+    result.textContent = '';
+    rollSound.currentTime = 0;
+    rollSound.play();
+  
+    const users = JSON.parse(localStorage.getItem('users')) || {};
+    users[username].balance = balance;
+    localStorage.setItem('users', JSON.stringify(users));
+
+    setTimeout(() => {
+        const diceResults = []; 
+        const diceValues = []; 
+        for (let i = 0; i < 3; i++) {
+            const randomIndex = Math.floor(Math.random() * animals.length);
+            const animalName = animals[randomIndex];
+            diceResults.push(animalName);
+            diceValues.push(animalValues[animalName]);
+        }
+        
+        diceArea.innerHTML = diceResults.map(name => emojis[animals.indexOf(name)]).join(' ');
+
+        const sum = diceValues.reduce((a, b) => a + b, 0);
+        const counts = diceResults.reduce((acc, name) => {
+            acc[name] = (acc[name] || 0) + 1;
+            return acc;
+        }, {});
+        
+        const isTriple = Object.values(counts).some(count => count === 3);
+        const tripleAnimal = isTriple ? diceResults[0] : null;
+        const isHigh = sum >= 11 && sum <= 17;
+        const isLow = sum >= 4 && sum <= 10;
+        
+        let totalWinnings = 0;
+        let winDetails = [];
+        let didWin = false;
+
+        activeBets.forEach((element, key) => {
+            const [type, value] = key.split('-');
+            let profit = 0;
+            let resultMessage = '';
+
+            switch(type) {
+                case 'single':
+                    const hitCount = counts[value] || 0;
+                    if (hitCount > 0) {
+                        profit = currentBetAmount * hitCount; 
+                        resultMessage = `ชนะ แทงเดี่ยว ${value} ออก ${hitCount} ตัว (กำไร ${profit} บาท)`;
+                    }
+                    break;
+
+                case 'high_low':
+                    const betIsHigh = value === 'High';
+                    
+                    if (isTriple) {
+                        resultMessage = `แพ้ ตองออก (สูง/ต่ำ แพ้ทุกกรณี)`;
+                    } else if ((betIsHigh && isHigh) || (!betIsHigh && isLow)) {
+                        profit = currentBetAmount * 1;
+                        resultMessage = `ชนะ แทง ${value} (แต้มรวม ${sum}) (กำไร ${profit} บาท)`;
+                    }
+                    break;
+                
+                case 'triple_any':
+                    if (isTriple) {
+                        profit = currentBetAmount * 7; 
+                        resultMessage = `ชนะ ตอง ${tripleAnimal} (กำไร ${profit} บาท)`;
+                    }
+                    break;
+            }
+            
+            if (profit > 0) {
+                totalWinnings += profit;
+                didWin = true;
+                winDetails.push(resultMessage);
+            } else if (resultMessage) {
+                 winDetails.push(resultMessage);
+            }
+        });
+        
+        const totalPayout = totalBetCost + totalWinnings; 
+        balance += totalPayout;
+
+        if (didWin) {
+            result.textContent = `🎉 ชนะ! ได้รับเงินคืนทั้งหมด ${totalPayout} บาท (กำไรสุทธิ ${totalWinnings} บาท)\nรายละเอียด: ${winDetails.join(' | ')}`;
+            winSound.currentTime = 0;
+            winSound.play();
+        } else {
+            result.textContent = `เสียใจ! ไม่มีรายการเดิมพันที่ชนะ 😢 (เสีย ${totalBetCost} บาท)`;
+        }
+
+        balanceDisplay.textContent = balance;
+        
+        activeBets.forEach(element => element.classList.remove('selected'));
+        activeBets.clear();
+        
+        users[username].balance = balance;
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        updateBetControls();
+
+    }, 900);
+});
+</script>
+</body>
+</html>
