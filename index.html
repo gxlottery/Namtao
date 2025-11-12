@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🎲 เกมน้ำเต้าปูปลา (Firebase Edition)</title>
+<title>🎲 เกมน้ำเต้าปูปลา (Asura's Ransom Edition)</title>
 
 <style>
   /* ******************************************************** */
@@ -49,7 +49,7 @@
     padding: 30px;
     border-radius: 15px;
     max-width: 400px;
-    margin: 50px auto 0px auto; /* ปรับ margin ล่างให้ลดลง */
+    margin: 50px auto 0px auto; 
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   }
   .auth-container input {
@@ -106,7 +106,6 @@
       background: rgba(0, 0, 0, 0.6);
       padding: 20px;
       border-radius: 15px;
-      /* ทำให้ Admin screen เลื่อนได้ ถ้าเนื้อหามีเยอะ */
       max-height: calc(100vh - 40px);
       overflow-y: auto;
   }
@@ -114,9 +113,8 @@
       color: #33ff33;
       text-shadow: 0 0 8px rgba(51, 255, 51, 0.5);
   }
-  /* ปุ่มรีเฟรชใหม่ */
   .refresh-btn-admin {
-      background-color: #007bff; /* Blue for refresh */
+      background-color: #007bff; 
       color: white;
       padding: 10px 15px;
       border: none;
@@ -149,7 +147,6 @@
       justify-content: space-between;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   }
-  /* เน้นชื่อผู้ใช้ให้เด่นขึ้น */
   .user-info strong {
       color: #FFDC00; 
       font-size: 1.1em;
@@ -193,7 +190,6 @@
   /* CSS สำหรับหน้าเกม */
   #game-screen { 
     display: none; 
-    /* ทำให้ Game Screen เลื่อนได้ ถ้าเนื้อหามีเยอะ แต่ Body จะไม่เลื่อน */
     max-height: 100vh;
     overflow-y: auto;
     padding-top: 20px; 
@@ -213,7 +209,6 @@
     align-items: center;
     justify-content: center;
   }
-  /* ปุ่มรีเฟรช และ ออกจากระบบ */
   #balance button {
     margin-left: 10px; 
     padding: 5px 10px; 
@@ -317,7 +312,6 @@
   
   /* ปุ่มเดิมพันรวม (High/Low/Triple) */
   .compound-bets {
-      /* ปรับให้แสดงแนวนอนโดยใช้ Flexbox เป็นค่าเริ่มต้น */
       display: flex;
       justify-content: space-between;
       gap: 15px;
@@ -351,7 +345,6 @@
   .bet-control { margin-bottom: 25px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
   .bet-control label { font-size: 16px; font-weight: bold; }
   
-  /* NEW: สำหรับจัดกลุ่มปุ่มและ input ให้เป็นแนวนอน */
   .bet-input-group {
       display: flex;
       gap: 10px;
@@ -395,14 +388,13 @@
     .single-bets { max-width: none; }
     .bet-btn-base { font-size: 35px; border-radius: 20px; }
     
-    /* แก้ไข: ทำให้ Label อยู่ด้านบน และ Input/Button อยู่ด้วยกัน */
     .bet-control { 
       flex-direction: column; 
       gap: 8px; 
-      align-items: center; /* จัดให้ตรงกลาง */
+      align-items: center; 
     }
     .bet-control label {
-        width: 100%; /* ทำให้ Label กินพื้นที่เต็ม */
+        width: 100%; 
         text-align: center;
         margin-bottom: 5px;
     }
@@ -411,7 +403,6 @@
         width: 100%;
     }
     
-    /* ปรับขนาด Input และปุ่ม 'เดิมพันสูงสุด' ในกลุ่มใหม่ */
     #betAmount { 
       width: 100px; 
       max-width: 100px;
@@ -426,7 +417,6 @@
     .admin-controls input[type="number"] { width: 40%; }
     .admin-controls button { flex: 1; }
     
-    /* องค์ประกอบที่ถูกบีบอัด */
     h1 { margin-top: 5px; margin-bottom: 10px; font-size: 20px; } 
     #balance { margin-bottom: 15px; padding: 8px 15px; } 
     .service-buttons { margin-bottom: 10px; margin-top: -5px; } 
@@ -484,7 +474,8 @@
             📞 ติดต่อแอดมิน (Line OA)
         </button>
     </div>
-    </div>
+
+  </div>
   
   <div id="admin-screen">
       <h2>🛠️ แผงควบคุมผู้ดูแลระบบ</h2>
@@ -563,7 +554,7 @@
 
 <script>
 // ===============================================
-// 🎯🎯🎯 1. Firebase Configuration (โค้ดจริงของคุณ GoldoraX-Game) 🎯🎯🎯
+// 🎯🎯🎯 1. Firebase Configuration (โค้ดจริงของคุณ) 🎯🎯🎯
 // ===============================================
 const firebaseConfig = {
     apiKey: "AIzaSyACTSU6LYObSv5gEAfKJt4Yr4LaCCAkQvw",
@@ -576,8 +567,6 @@ const firebaseConfig = {
     measurementId: "G-09PW99QK06" 
 };
 
-// ชื่อคอลเลกชันใน Firestore สำหรับเกมนี้โดยเฉพาะ
-// *** โค้ดนี้จะใช้ Email เป็น Doc ID แทน Username ***
 const HOO_HEY_HOW_COLLECTION = "hoo_hey_how_players"; 
 
 // ===============================================
@@ -588,15 +577,15 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore(); 
 
-const ADMIN_EMAIL = 'admin@game.local'; // ใช้ Email สำหรับ Admin
+const ADMIN_EMAIL = 'admin@game.local'; 
 const ADMIN_PASS = '03774570'; 
 
 let isLoginMode = true;
 const balanceDisplay = document.getElementById('playerBalance');
 const betInput = document.getElementById('betAmount'); 
 let balance = 0;
-let currentEmail = null; // เปลี่ยนเป็นเก็บ Email แทน Username
-let currentDisplayName = null; // NEW: สำหรับเก็บชื่อที่จะแสดงในเกม
+let currentEmail = null; 
+let currentDisplayName = null; 
 
 const minBet = 10;
 const maxBetDefault = 1000;
@@ -623,7 +612,7 @@ function toggleAuthMode() {
 }
 
 // ===============================================
-// 3. User Authentication (ใช้ Email/Password โดยตรง)
+// 3. User Authentication (พร้อมการตรวจสอบรูปแบบอีเมล)
 // ===============================================
 async function handleAuth() {
     const email = document.getElementById('email').value.trim();
@@ -631,7 +620,14 @@ async function handleAuth() {
     const errorMessage = document.getElementById('error-message');
     errorMessage.textContent = ''; 
     
-    // *** เปลี่ยนการตรวจสอบ: ตรวจสอบ Email แทน Username ***
+    // *** NEW: การตรวจสอบรูปแบบอีเมล (ป้องกัน Error auth/invalid-email) ***
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        errorMessage.textContent = '❌ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (ห้ามมีช่องว่างนำหน้า/ตามหลัง)';
+        return;
+    }
+    // *** END NEW ***
+    
     if (!email || !password) {
         errorMessage.textContent = 'กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน';
         return;
@@ -647,15 +643,15 @@ async function handleAuth() {
         await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         if (isLoginMode) {
-            // LOGIN with Firebase Auth (ใช้ Email โดยตรง)
+            // LOGIN
             await auth.signInWithEmailAndPassword(email, password);
-            // ล็อกอินสำเร็จจะถูกจัดการโดย autoLoginOnLoad
+            // NEW: บังคับรีโหลดเพื่อให้ autoLoginOnLoad ทำงานและเข้าหน้าเกม
+            window.location.reload(); 
         } else {
-            // SIGN UP with Firebase Auth
+            // SIGN UP
             const confirmPassword = document.getElementById('confirmPassword').value;
             const gameUsername = document.getElementById('gameUsername').value.trim();
             
-            // ตรวจสอบความถูกต้องของ Username สำหรับแสดงผลในเกม
             if (!gameUsername || gameUsername.length < 3 || gameUsername.length > 20) {
                  errorMessage.textContent = 'ชื่อผู้ใช้ในเกมต้องมี 3-20 ตัวอักษร';
                  return;
@@ -669,22 +665,18 @@ async function handleAuth() {
                 return;
             }
             
-            // ตรวจสอบว่า Username ที่ใช้แสดงในเกมซ้ำหรือไม่
             const existingUsernames = await db.collection(HOO_HEY_HOW_COLLECTION).where('displayName', '==', gameUsername).get();
             if (!existingUsernames.empty) {
                 errorMessage.textContent = '❌ ชื่อผู้ใช้นี้มีคนใช้แสดงในเกมแล้ว! กรุณาเลือกชื่ออื่น';
                 return;
             }
             
-            // 1. สร้างผู้ใช้ใน Firebase Auth ด้วย Email
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
-            // 2. สร้าง Document ใน Firestore (ใช้ Email เป็น Doc ID)
             await db.collection(HOO_HEY_HOW_COLLECTION).doc(email).set({
-                // *** เปลี่ยนการบันทึก: เก็บ Email, DisplayName และ UID ***
                 email: email, 
-                displayName: gameUsername, // ชื่อที่ผู้เล่นจะเห็นในเกม
+                displayName: gameUsername, 
                 balance: 0,
                 uid: user.uid 
             });
@@ -727,6 +719,7 @@ function openLineOAPopup() {
     const left = (screen.width / 2) - (width / 2);
     const top = (screen.height / 2) - (height / 2);
 
+    // เปิดใน Pop-up/แท็บใหม่ โดยไม่รบกวนหน้าต่างหลัก
     window.open(
         lineOALink, 
         '_blank', 
@@ -734,7 +727,7 @@ function openLineOAPopup() {
     );
 }
 
-// *** แก้ไข: ใช้ Email เป็นคีย์หลักในการดึงข้อมูล ***
+// *** แก้ไข: เพิ่ม History State เพื่อจัดการปุ่มย้อนกลับ ***
 async function loginSuccess(email, uid) {
     currentEmail = email;
     
@@ -742,12 +735,13 @@ async function loginSuccess(email, uid) {
     document.getElementById('admin-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
     
+    // NEW: ตั้ง History State เพื่อให้เมื่อผู้เล่นกด Back Button ยังคงอยู่หน้าเกม
+    history.pushState({ screen: 'game' }, '', window.location.pathname);
+    
     const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
 
-    // ใช้ onSnapshot เพื่อฟังการเปลี่ยนแปลงแบบ Real-time
     userRef.onSnapshot(doc => {
         if (doc.exists) {
-            // *** ดึงชื่อผู้ใช้ที่ใช้แสดงในเกม ***
             currentDisplayName = doc.data().displayName || email; 
             balance = doc.data().balance; 
         } else {
@@ -755,7 +749,6 @@ async function loginSuccess(email, uid) {
             currentDisplayName = email;
         }
         
-        // อัปเดต UI ด้วยชื่อที่ใช้แสดงในเกม
         document.getElementById('usernameDisplay').textContent = `ยอดเงิน ${currentDisplayName}:`; 
         balanceDisplay.textContent = balance;
         updateBetControls(); 
@@ -768,7 +761,6 @@ async function loginSuccess(email, uid) {
         document.getElementById('result').textContent = '⚠️ ข้อผิดพลาด: ไม่สามารถอัปเดตยอดเงินได้แบบ Real-time';
     });
 }
-// **************************************************************************
 
 function forceRefresh() {
     document.getElementById('result').textContent = 'กำลังรีเฟรชข้อมูล (ระบบจะโหลดหน้าจอใหม่)...';
@@ -801,12 +793,13 @@ function logout() {
 
 // ===============================================
 // 5. Admin Panel Logic 
-// *** แก้ไข: ใช้ query เพื่อดึงข้อมูลสำหรับ Admin ***
 // ===============================================
 function adminLoginSuccess() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'block';
+    // NEW: ตั้ง History State เพื่อให้เมื่อผู้เล่นกด Back Button ยังคงอยู่หน้า Admin
+    history.pushState({ screen: 'admin' }, '', window.location.pathname);
     renderUserList(); 
 }
 
@@ -819,15 +812,13 @@ async function renderUserList() {
     userListElement.innerHTML = '';
     
     try {
-        // ดึงข้อมูลผู้ใช้ทั้งหมดจาก Firestore
         const snapshot = await db.collection(HOO_HEY_HOW_COLLECTION).get();
         
         let userCount = 0;
         snapshot.forEach(doc => {
-            // *** ใช้ Doc ID (ซึ่งคือ Email) ในการอ้างอิง ***
             const email = doc.id; 
             const user = doc.data();
-            const displayName = user.displayName || email; // ใช้ displayName ที่ตั้งไว้
+            const displayName = user.displayName || email; 
             
             const listItem = document.createElement('li');
             listItem.innerHTML = `
@@ -854,9 +845,7 @@ async function renderUserList() {
     }
 }
 
-// *** แก้ไข: ใช้ Email เป็นพารามิเตอร์หลัก และปรับ Input ID ***
 async function updateUserBalance(email, isDeposit = true) {
-    // ต้องแปลง Email เป็น ID ที่ถูกต้องสำหรับ HTML (ป้องกันอักขระพิเศษ)
     const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
     const amountInput = document.getElementById(`amount-${safeId}`);
     const amount = parseInt(amountInput.value);
@@ -866,11 +855,9 @@ async function updateUserBalance(email, isDeposit = true) {
         return;
     }
     
-    // ใช้ Email เป็น Doc ID
     const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
 
     try {
-        // ... (โค้ด Transaction เหมือนเดิม) ...
         await db.runTransaction(async (transaction) => {
             const doc = await transaction.get(userRef);
             if (!doc.exists) {
@@ -912,7 +899,6 @@ async function updateUserBalance(email, isDeposit = true) {
     }
 }
 
-// *** แก้ไข: ใช้ Email ในการดึงยอดเงิน ***
 async function getUserBalance(email) {
     const doc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(email).get();
     return doc.exists ? doc.data().balance : 0;
@@ -988,7 +974,6 @@ bettingButtons.forEach(btn => {
 
 // ===============================================
 // 7. โค้ด Roll Dice พร้อม Transaction 
-// *** แก้ไข: ใช้ currentEmail ใน Transaction ***
 // ===============================================
 
 document.getElementById('roll').addEventListener('click', async () => {
@@ -1017,7 +1002,6 @@ document.getElementById('roll').addEventListener('click', async () => {
     try {
         // ************ 1. บันทึกยอดเงินที่ถูกหักลงใน Firestore ด้วย Transaction ************
         await db.runTransaction(async (transaction) => {
-            // *** ใช้ currentEmail เป็น Doc ID ***
             const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentEmail); 
             const userDoc = await transaction.get(userRef);
 
@@ -1070,7 +1054,6 @@ document.getElementById('roll').addEventListener('click', async () => {
                 let resultMessage = '';
 
                 switch(type) {
-                    // ... (โค้ดคำนวณกำไรเหมือนเดิม) ...
                     case 'single':
                         const hitCount = counts[value] || 0;
                         if (hitCount > 0) {
@@ -1123,7 +1106,6 @@ document.getElementById('roll').addEventListener('click', async () => {
             
             // ************ 3. บันทึกยอดเงินสุดท้ายลงใน Firestore ด้วย Transaction ************
             await db.runTransaction(async (transaction) => {
-                // *** ใช้ currentEmail เป็น Doc ID ***
                 const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentEmail);
                 transaction.update(userRef, { balance: balance });
             });
@@ -1137,7 +1119,7 @@ document.getElementById('roll').addEventListener('click', async () => {
     } catch (error) {
         alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล! ยอดเงินอาจไม่ถูกหัก/เพิ่ม กรุณาลองใหม่');
         
-        const latestBalance = await getUserBalance(currentEmail); // ดึงจาก DB ด้วย Email
+        const latestBalance = await getUserBalance(currentEmail); 
         balance = latestBalance; 
         
         balanceDisplay.textContent = balance;
@@ -1151,8 +1133,22 @@ document.getElementById('roll').addEventListener('click', async () => {
 
 
 // -----------------------------------------------------
-// 🎯🎯🎯 8. การบังคับล็อกอินอัตโนมัติทันทีเมื่อโหลดหน้า (ใช้ Email) 🎯🎯🎯
+// 🎯🎯🎯 8. การบังคับล็อกอินอัตโนมัติทันทีเมื่อโหลดหน้า (Auto Login) 🎯🎯🎯
 // -----------------------------------------------------
+
+// NEW: เพิ่ม Listener สำหรับ Back Button เพื่อให้ทำงานร่วมกับ history.pushState
+window.addEventListener('popstate', (event) => {
+    // ถ้าสถานะเป็น 'game' หรือ 'admin' ให้อยู่หน้านั้น
+    if (event.state && (event.state.screen === 'game' || event.state.screen === 'admin')) {
+        // ไม่ต้องทำอะไร เพราะ onAuthStateChanged จะจัดการอยู่แล้ว
+    } else {
+        // ถ้าสถานะไม่ใช่เกม/แอดมิน (เช่น เข้ามาครั้งแรก) ให้แสดงหน้าล็อกอิน
+        document.getElementById('auth-screen').style.display = 'block';
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('admin-screen').style.display = 'none';
+    }
+});
+
 
 async function autoLoginOnLoad() {
     document.getElementById('auth-screen').style.display = 'none';
@@ -1174,15 +1170,12 @@ async function autoLoginOnLoad() {
         const user = auth.currentUser; 
         
         if (user) {
-            // พบผู้ใช้ที่ล็อกอินอยู่
             const email = user.email;
             
-            // หากเป็น Admin ให้แสดงหน้า Admin
             if (email === ADMIN_EMAIL) { 
                 adminLoginSuccess();
                 return;
             }
-            // หากเป็นผู้เล่นทั่วไป ให้เข้าหน้าเกม (ใช้ Email เป็นคีย์หลัก)
             loginSuccess(email, user.uid);
             return;
         }
