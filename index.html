@@ -464,11 +464,12 @@
     <h1>เข้าสู่ระบบ / สมัครสมาชิก 🎯</h1>
     <div class="auth-container">
       <h2 id="auth-title">เข้าสู่ระบบ</h2>
-      <input type="text" id="username" placeholder="ชื่อผู้ใช้ (Username)" required>
+      <input type="email" id="email" placeholder="อีเมล (Email)" required>
       <input type="password" id="password" placeholder="รหัสผ่าน (Password)" required>
       
       <div id="signup-fields" style="display:none;">
           <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required>
+          <input type="text" id="gameUsername" placeholder="ชื่อผู้ใช้ที่จะแสดงในเกม" required>
       </div>
 
       <button id="auth-button" onclick="handleAuth()">เข้าสู่ระบบ</button>
@@ -498,7 +499,7 @@
         <button onclick="openLineOAPopup()" class="service-btn service-line-btn">
             💸 เติมเงิน/ถอนเงิน (Line OA)
         </button>
-        </div>
+    </div>
     
     <div id="balance">
         💰 <span id="usernameDisplay">ยอดเงิน:</span> <span id="playerBalance">0</span> บาท
@@ -569,7 +570,8 @@ const firebaseConfig = {
 };
 
 // ชื่อคอลเลกชันใน Firestore สำหรับเกมนี้โดยเฉพาะ
-const HOO_HEY_HOW_COLLECTION = "hoo_hey_how_players";
+// *** โค้ดนี้จะใช้ Email เป็น Doc ID แทน Username ***
+const HOO_HEY_HOW_COLLECTION = "hoo_hey_how_players"; 
 
 // ===============================================
 // 2. Initialize Firebase และ Global Variables
@@ -579,17 +581,19 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore(); 
 
-const ADMIN_USER = 'admin';
+const ADMIN_EMAIL = 'admin@game.local'; // ใช้ Email สำหรับ Admin
 const ADMIN_PASS = '03774570'; 
 
 let isLoginMode = true;
 const balanceDisplay = document.getElementById('playerBalance');
 const betInput = document.getElementById('betAmount'); 
 let balance = 0;
-let currentUsername = null; 
+let currentEmail = null; // เปลี่ยนเป็นเก็บ Email แทน Username
+let currentDisplayName = null; // NEW: สำหรับเก็บชื่อที่จะแสดงในเกม
+
 const minBet = 10;
 const maxBetDefault = 1000;
-const USER_DOMAIN = '@game.local'; 
+// *** ลบ: const USER_DOMAIN = '@game.local'; ***
 
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
@@ -600,43 +604,56 @@ function toggleAuthMode() {
     document.querySelector('.toggle-link').textContent = isLoginMode 
         ? 'ยังไม่มีบัญชี? สมัครสมาชิกที่นี่' 
         : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบที่นี่';
+        
+    // เคลียร์ค่าใน Input เมื่อสลับโหมด
+    document.getElementById('email').value = ''; 
+    document.getElementById('password').value = '';
+    if (document.getElementById('confirmPassword')) {
+         document.getElementById('confirmPassword').value = '';
+    }
+    if (document.getElementById('gameUsername')) {
+         document.getElementById('gameUsername').value = '';
+    }
 }
 
 // ===============================================
-// 3. User Authentication (ใช้ Firebase Auth)
-// *** แก้ไขการจัดการข้อผิดพลาดเพื่อความชัดเจน ***
+// 3. User Authentication (ใช้ Email/Password โดยตรง)
 // ===============================================
 async function handleAuth() {
-    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const errorMessage = document.getElementById('error-message');
     errorMessage.textContent = ''; 
-
-    if (!username || !password) {
-        errorMessage.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่านให้ครบถ้วน';
+    
+    // *** เปลี่ยนการตรวจสอบ: ตรวจสอบ Email แทน Username ***
+    if (!email || !password) {
+        errorMessage.textContent = 'กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน';
         return;
     }
     
-    // ตรวจสอบ Admin Login (Local Check)
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
+    // ตรวจสอบ Admin Login
+    if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
         adminLoginSuccess();
         return;
     }
 
-    const email = username + USER_DOMAIN;
-
     try {
-        // *** แก้ไข: ตั้งค่าให้สถานะล็อกอินเก็บไว้ใน Local Storage ตลอดไป (สำคัญมาก) ***
         await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        // **************************************************************************
 
         if (isLoginMode) {
-            // LOGIN with Firebase Auth
+            // LOGIN with Firebase Auth (ใช้ Email โดยตรง)
             await auth.signInWithEmailAndPassword(email, password);
             // ล็อกอินสำเร็จจะถูกจัดการโดย autoLoginOnLoad
         } else {
             // SIGN UP with Firebase Auth
             const confirmPassword = document.getElementById('confirmPassword').value;
+            const gameUsername = document.getElementById('gameUsername').value.trim();
+            
+            // ตรวจสอบความถูกต้องของ Username สำหรับแสดงผลในเกม
+            if (!gameUsername || gameUsername.length < 3 || gameUsername.length > 20) {
+                 errorMessage.textContent = 'ชื่อผู้ใช้ในเกมต้องมี 3-20 ตัวอักษร';
+                 return;
+            }
             if (password.length < 6) {
                 errorMessage.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
                 return;
@@ -646,36 +663,44 @@ async function handleAuth() {
                 return;
             }
             
-            // สร้างผู้ใช้ใน Firebase Auth
+            // ตรวจสอบว่า Username ที่ใช้แสดงในเกมซ้ำหรือไม่ (เพื่อไม่ให้ซ้ำกับผู้ใช้เก่าที่สมัครด้วย Username)
+            // *** NOTE: การตรวจสอบนี้ใช้ได้กับผู้เล่นใหม่เท่านั้น ผู้เล่นเก่าที่ใช้ @game.local จะไม่ถูกตรวจสอบ ***
+            const existingUsernames = await db.collection(HOO_HEY_HOW_COLLECTION).where('displayName', '==', gameUsername).get();
+            if (!existingUsernames.empty) {
+                errorMessage.textContent = '❌ ชื่อผู้ใช้นี้มีคนใช้แสดงในเกมแล้ว! กรุณาเลือกชื่ออื่น';
+                return;
+            }
+            
+            // 1. สร้างผู้ใช้ใน Firebase Auth ด้วย Email
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
-            // สร้าง Document ใน Firestore สำหรับยอดเงินเริ่มต้น (ใช้คอลเลกชันเฉพาะ)
-            await db.collection(HOO_HEY_HOW_COLLECTION).doc(username).set({
-                username: username,
+            // 2. สร้าง Document ใน Firestore (ใช้ Email เป็น Doc ID)
+            await db.collection(HOO_HEY_HOW_COLLECTION).doc(email).set({
+                // *** เปลี่ยนการบันทึก: เก็บ Email, DisplayName และ UID ***
+                email: email, 
+                displayName: gameUsername, // ชื่อที่ผู้เล่นจะเห็นในเกม
                 balance: 0,
                 uid: user.uid 
             });
+            
             alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบอีกครั้ง'); 
-            // ให้แสดงหน้าล็อกอินอีกครั้ง
             toggleAuthMode();
         }
         
     } catch (error) {
         let displayError = 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาติดต่อแอดมิน';
 
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-            displayError = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            displayError = '❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
         } else if (error.code === 'auth/email-already-in-use') {
-            displayError = '❌ ชื่อผู้ใช้นี้มีคนใช้แล้ว! กรุณาลองเข้าสู่ระบบ หรือเลือกชื่ออื่น';
+            displayError = '❌ อีเมลนี้มีคนใช้แล้ว! กรุณาลองเข้าสู่ระบบ หรือใช้อีเมลอื่น';
         } else if (error.code === 'auth/weak-password') {
             displayError = 'รหัสผ่านอ่อนแอเกินไป (ต้องมีอย่างน้อย 6 ตัวอักษร)';
         } else if (error.code === 'auth/operation-not-allowed') {
-            // *** ข้อผิดพลาดสำคัญ: บ่งชี้ว่า Email/Password ถูกปิดใช้งานใน Firebase Console ***
             displayError = '⚠️ ระบบการลงทะเบียนถูกปิดใช้งาน! กรุณาแจ้งแอดมินให้เปิดใช้งาน "Email/Password" ใน Firebase Console';
-            // ****************************************************************************
         } else if (error.code === 'auth/invalid-email') {
-             displayError = 'รูปแบบชื่อผู้ใช้ไม่ถูกต้อง';
+             displayError = 'รูปแบบอีเมลไม่ถูกต้อง';
         } else {
             console.error(error);
             displayError = `เกิดข้อผิดพลาด: ${error.message}`;
@@ -689,55 +714,51 @@ async function handleAuth() {
 // 4. Game Logic Handlers
 // ===============================================
 
-// *** NEW: ฟังก์ชันเปิด Line OA เป็น Pop-up ***
 function openLineOAPopup() {
     const lineOALink = 'https://lin.ee/Mm1caQx';
-    const width = 600; // กำหนดความกว้างของ Pop-up (เป็นพิกเซล)
-    const height = 800; // กำหนดความสูงของ Pop-up (เป็นพิกเซล)
+    const width = 600; 
+    const height = 800; 
     
-    // คำนวณตำแหน่งกึ่งกลางหน้าจอ
     const left = (screen.width / 2) - (width / 2);
     const top = (screen.height / 2) - (height / 2);
 
-    // ใช้ window.open เพื่อเปิดหน้าต่างใหม่ที่มีขนาดกำหนด
     window.open(
         lineOALink, 
-        '_blank', // ยังคงเปิดในหน้าต่าง/แท็บใหม่
+        '_blank', 
         `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
     );
 }
-// **********************************************
 
-// *** แก้ไข: เปลี่ยนเป็น onSnapshot เพื่ออัปเดตยอดเงิน Real-time ***
-function loginSuccess(username, uid) {
-    currentUsername = username;
+// *** แก้ไข: ใช้ Email เป็นคีย์หลักในการดึงข้อมูล ***
+async function loginSuccess(email, uid) {
+    currentEmail = email;
     
-    // ตั้งค่า UI ทั่วไป
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
     
-    const usernameDisplay = document.getElementById('usernameDisplay');
-    usernameDisplay.textContent = `ยอดเงิน ${username}:`; 
-
-    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(username);
+    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
 
     // ใช้ onSnapshot เพื่อฟังการเปลี่ยนแปลงแบบ Real-time
     userRef.onSnapshot(doc => {
         if (doc.exists) {
-            // อัปเดตตัวแปร 'balance' ด้วยยอดเงินล่าสุดจาก DB
+            // *** ดึงชื่อผู้ใช้ที่ใช้แสดงในเกม ***
+            currentDisplayName = doc.data().displayName || email; 
             balance = doc.data().balance; 
         } else {
-            // กรณีที่ Doc หายไป (ไม่ควรเกิดขึ้น)
             balance = 0; 
+            currentDisplayName = email;
+            // หากไม่พบ Doc อาจเป็นผู้ใช้เก่าที่ใช้ Username (@game.local)
+            // ในกรณีนี้จะพยายามหาจาก Username เก่า แต่สำหรับผู้เล่นใหม่จะใช้ Email เป็น Doc ID
         }
         
-        // อัปเดต UI ทั้งหมดทันทีที่ยอดเงินเปลี่ยน
+        // อัปเดต UI ด้วยชื่อที่ใช้แสดงในเกม
+        document.getElementById('usernameDisplay').textContent = `ยอดเงิน ${currentDisplayName}:`; 
         balanceDisplay.textContent = balance;
-        updateBetControls(); // อัปเดตปุ่มและขีดจำกัดการเดิมพัน
-        updateTotalCostDisplay(); // อัปเดตยอดเดิมพันรวม
+        updateBetControls(); 
+        updateTotalCostDisplay(); 
 
-        console.log(`ยอดเงินผู้เล่น ${username} ถูกอัปเดตเป็น ${balance} บาท (Real-time)`);
+        console.log(`ยอดเงินผู้เล่น ${currentDisplayName} ถูกอัปเดตเป็น ${balance} บาท (Real-time)`);
         
     }, err => {
         console.error("Error listening to user balance:", err);
@@ -746,15 +767,12 @@ function loginSuccess(username, uid) {
 }
 // **************************************************************************
 
-// NEW: ฟังก์ชันบังคับรีโหลดหน้าจอ (พร้อมดีเลย์แจ้งเตือน)
 function forceRefresh() {
     document.getElementById('result').textContent = 'กำลังรีเฟรชข้อมูล (ระบบจะโหลดหน้าจอใหม่)...';
     setTimeout(() => {
         window.location.reload(); 
     }, 500); 
 }
-// **************************************************************************
-
 
 function updateBetControls() {
     let defaultBet = Math.min(balance > 0 ? 10 : 0, balance);
@@ -774,12 +792,13 @@ function updateBetControls() {
 
 function logout() {
     auth.signOut();
-    window.location.reload(); // บังคับรีโหลดเพื่อแสดงหน้าล็อกอินใหม่
+    window.location.reload(); 
 }
 
 
 // ===============================================
-// 5. Admin Panel Logic (ใช้ Firestore)
+// 5. Admin Panel Logic 
+// *** แก้ไข: ใช้ query เพื่อดึงข้อมูลสำหรับ Admin ***
 // ===============================================
 function adminLoginSuccess() {
     document.getElementById('auth-screen').style.display = 'none';
@@ -797,21 +816,25 @@ async function renderUserList() {
     userListElement.innerHTML = '';
     
     try {
-        // ดึงข้อมูลผู้ใช้ทั้งหมดจาก Firestore (ใช้คอลเลกชันเฉพาะ)
+        // ดึงข้อมูลผู้ใช้ทั้งหมดจาก Firestore
         const snapshot = await db.collection(HOO_HEY_HOW_COLLECTION).get();
         
         let userCount = 0;
         snapshot.forEach(doc => {
-            const username = doc.id;
+            // *** ใช้ Doc ID (ซึ่งคือ Email) ในการอ้างอิง ***
+            const email = doc.id; 
             const user = doc.data();
+            const displayName = user.displayName || email; // ใช้ displayName ที่ตั้งไว้
             
             const listItem = document.createElement('li');
             listItem.innerHTML = `
-                <span class="user-info">ชื่อผู้ใช้: <strong>${username}</strong></span> <span class="user-balance">ยอดเงิน: ${user.balance} บาท</span>
+                <span class="user-info">ชื่อเกม: <strong>${displayName}</strong></span> 
+                <span class="user-info">อีเมล: <strong>${email}</strong></span> 
+                <span class="user-balance">ยอดเงิน: ${user.balance} บาท</span>
                 <div class="admin-controls">
-                    <input type="number" id="amount-${username}" placeholder="จำนวนเงิน">
-                    <button class="deposit-btn-admin" onclick="updateUserBalance('${username}', true)">+ เติมเงิน</button>
-                    <button class="withdraw-btn-admin" onclick="updateUserBalance('${username}', false)">- ถอนเงิน</button>
+                    <input type="number" id="amount-${email.replace(/[^a-zA-Z0-9]/g, '_')}" placeholder="จำนวนเงิน">
+                    <button class="deposit-btn-admin" onclick="updateUserBalance('${email}')">+ เติมเงิน</button>
+                    <button class="withdraw-btn-admin" onclick="updateUserBalance('${email}', false)">- ถอนเงิน</button>
                 </div>
             `;
             userListElement.appendChild(listItem);
@@ -828,8 +851,11 @@ async function renderUserList() {
     }
 }
 
-async function updateUserBalance(username, isDeposit) {
-    const amountInput = document.getElementById(`amount-${username}`);
+// *** แก้ไข: ใช้ Email เป็นพารามิเตอร์หลัก และปรับ Input ID ***
+async function updateUserBalance(email, isDeposit = true) {
+    // ต้องแปลง Email เป็น ID ที่ถูกต้องสำหรับ HTML (ป้องกันอักขระพิเศษ)
+    const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
+    const amountInput = document.getElementById(`amount-${safeId}`);
     const amount = parseInt(amountInput.value);
 
     if (isNaN(amount) || amount <= 0) {
@@ -837,10 +863,11 @@ async function updateUserBalance(username, isDeposit) {
         return;
     }
     
-    // กำหนด reference ไปที่คอลเลกชันเฉพาะ
-    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(username);
+    // ใช้ Email เป็น Doc ID
+    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
 
     try {
+        // ... (โค้ด Transaction เหมือนเดิม) ...
         await db.runTransaction(async (transaction) => {
             const doc = await transaction.get(userRef);
             if (!doc.exists) {
@@ -849,6 +876,7 @@ async function updateUserBalance(username, isDeposit) {
             
             let currentBalance = doc.data().balance;
             let newBalance;
+            const displayName = doc.data().displayName || email;
 
             if (isDeposit) {
                 newBalance = currentBalance + amount;
@@ -862,20 +890,18 @@ async function updateUserBalance(username, isDeposit) {
             transaction.update(userRef, { balance: newBalance });
             
             if (isDeposit) {
-                alert(`เติมเงินให้ ${username}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
+                alert(`เติมเงินให้ ${displayName}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
             } else {
-                alert(`ถอนเงินจาก ${username}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
+                alert(`ถอนเงินจาก ${displayName}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
             }
         });
 
-        // รีเฟรชรายการใน Admin Panel
         renderUserList();
-        
-        amountInput.value = ''; // ล้างค่าใน input
+        amountInput.value = ''; 
 
     } catch (error) {
         if (error === "ยอดเงินไม่พอ") {
-            alert(`ยอดเงิน ${username} ไม่เพียงพอสำหรับการถอน ${amount} บาท`);
+            alert(`ยอดเงินไม่เพียงพอสำหรับการถอน ${amount} บาท`);
         } else {
             alert(`เกิดข้อผิดพลาด: ${error}`);
             console.error("Transaction failed: ", error);
@@ -883,8 +909,9 @@ async function updateUserBalance(username, isDeposit) {
     }
 }
 
-async function getUserBalance(username) {
-    const doc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(username).get();
+// *** แก้ไข: ใช้ Email ในการดึงยอดเงิน ***
+async function getUserBalance(email) {
+    const doc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(email).get();
     return doc.exists ? doc.data().balance : 0;
 }
 
@@ -905,13 +932,11 @@ const rollSound = document.getElementById('rollSound');
 const winSound = document.getElementById('winSound');
 
 
-// ฟังก์ชันใหม่: อัปเดตยอดรวมที่ต้องจ่าย
 function updateTotalCostDisplay() {
     const amountPerBet = parseInt(betInput.value) || 0;
     const totalCost = amountPerBet * activeBets.size;
     document.querySelector('#totalBetDisplay span').textContent = totalCost.toLocaleString();
     
-    // ตรวจสอบว่ายอดเดิมพันรวมเกินยอดเงินหรือไม่
     const rollButton = document.getElementById('roll');
     if (totalCost > balance && balance > 0) {
         rollButton.disabled = true;
@@ -921,15 +946,14 @@ function updateTotalCostDisplay() {
         rollButton.textContent = 'หมุนลูกเต๋า';
     }
 }
-// **********************************************
 
 function setMaxBet() {
     let max = Math.min(balance, maxBetDefault);
     betInput.value = max;
-    updateTotalCostDisplay(); // <--- เรียกใช้ทุกครั้งที่เปลี่ยนจำนวนเงิน
+    updateTotalCostDisplay(); 
 }
 
-betInput.addEventListener('input', updateTotalCostDisplay); // ดักจับการพิมพ์ตัวเลข
+betInput.addEventListener('input', updateTotalCostDisplay); 
 
 const bettingButtons = document.querySelectorAll('[data-bet-type]');
 bettingButtons.forEach(btn => {
@@ -942,9 +966,7 @@ bettingButtons.forEach(btn => {
             activeBets.delete(key);
             btn.classList.remove('selected');
         } else {
-            // โค้ดสำหรับ High/Low/Triple: อนุญาตให้เลือกได้แค่ 1 ตัวในกลุ่มนี้
             if (type !== 'single' && (activeBets.has('high_low-High') || activeBets.has('high_low-Low') || activeBets.has('triple_any-Any'))) {
-                // หากมีการเลือก High/Low/Triple ตัวอื่นอยู่แล้ว ให้ยกเลิกการเลือกเก่าก่อน
                 let conflictingKey = Array.from(activeBets.keys()).find(k => k.startsWith('high_low') || k.startsWith('triple_any'));
                 if (conflictingKey) {
                     activeBets.get(conflictingKey).classList.remove('selected');
@@ -956,13 +978,14 @@ bettingButtons.forEach(btn => {
             btn.classList.add('selected');
         }
         
-        updateTotalCostDisplay(); // <--- เรียกใช้ทุกครั้งที่เลือก/ยกเลิก
+        updateTotalCostDisplay(); 
     });
 });
 
 
 // ===============================================
-// 7. โค้ด Roll Dice พร้อม Transaction เพื่อความปลอดภัย
+// 7. โค้ด Roll Dice พร้อม Transaction 
+// *** แก้ไข: ใช้ currentEmail ใน Transaction ***
 // ===============================================
 
 document.getElementById('roll').addEventListener('click', async () => {
@@ -972,7 +995,6 @@ document.getElementById('roll').addEventListener('click', async () => {
     
     const totalBetCost = currentBetAmount * activeBets.size;
     
-    // ตรวจสอบยอดเงินอีกครั้งก่อนเริ่ม Transaction
     if (totalBetCost > balance) { 
         alert(`ยอดเงินไม่เพียงพอสำหรับการเดิมพันทั้งหมด ${totalBetCost} บาท!`); 
         updateBetControls(); 
@@ -981,19 +1003,19 @@ document.getElementById('roll').addEventListener('click', async () => {
     }
 
     // ************ การเตรียม UI ก่อน Transaction ************
-    // หักยอดเงินเดิมพันออกจากตัวแปร balance ในหน้าจอ (UI) ก่อน
     balance -= totalBetCost;
     balanceDisplay.textContent = balance;
     diceArea.textContent = 'หมุน...';
     result.textContent = '';
     rollSound.currentTime = 0;
     rollSound.play();
-    document.getElementById('roll').disabled = true; // ป้องกันการกดซ้ำ
+    document.getElementById('roll').disabled = true; 
 
     try {
         // ************ 1. บันทึกยอดเงินที่ถูกหักลงใน Firestore ด้วย Transaction ************
         await db.runTransaction(async (transaction) => {
-            const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentUsername);
+            // *** ใช้ currentEmail เป็น Doc ID ***
+            const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentEmail); 
             const userDoc = await transaction.get(userRef);
 
             if (!userDoc.exists) {
@@ -1004,18 +1026,14 @@ document.getElementById('roll').addEventListener('click', async () => {
             let newDbBalance = dbBalance - totalBetCost;
 
             if (newDbBalance < 0) {
-                // หากเกิดความผิดพลาดจาก Race Condition ให้ยกเลิก
                 throw new Error("ยอดเงินในฐานข้อมูลไม่พอ (Race Condition)");
             }
 
-            // บันทึกยอดเงินที่ถูกหักลงใน DB
             transaction.update(userRef, { balance: newDbBalance });
-            
-            // อัปเดตตัวแปรใน JS ด้วยยอดเงินที่ถูกหักจาก DB เพื่อนำไปใช้ต่อ
             balance = newDbBalance;
         });
 
-        // ************ 2. ดำเนินการหมุนลูกเต๋าและคำนวณผล ************
+        // ************ 2. ดำเนินการหมุนลูกเต๋าและคำนวณผล (เหมือนเดิม) ************
         setTimeout(async () => { 
             const diceResults = []; 
             const diceValues = []; 
@@ -1049,6 +1067,7 @@ document.getElementById('roll').addEventListener('click', async () => {
                 let resultMessage = '';
 
                 switch(type) {
+                    // ... (โค้ดคำนวณกำไรเหมือนเดิม) ...
                     case 'single':
                         const hitCount = counts[value] || 0;
                         if (hitCount > 0) {
@@ -1086,7 +1105,7 @@ document.getElementById('roll').addEventListener('click', async () => {
             });
             
             const totalPayout = totalBetCost + totalWinnings; 
-            balance += totalWinnings; // เพิ่ม/ลดเฉพาะกำไร/ขาดทุน
+            balance += totalWinnings; 
             
             if (didWin) {
                 result.textContent = `🎉 ชนะ! ได้รับเงินคืนทั้งหมด ${totalPayout} บาท (กำไรสุทธิ ${totalWinnings} บาท)\nรายละเอียด: ${winDetails.join(' | ')}`;
@@ -1095,79 +1114,73 @@ document.getElementById('roll').addEventListener('click', async () => {
             } else {
                 result.textContent = `เสียใจ! ไม่มีรายการเดิมพันที่ชนะ 😢 (เสีย ${totalBetCost} บาท)`;
             }
-
-            // ** ไม่ต้องอัปเดต balanceDisplay ที่นี่ เพราะ onSnapshot จะจัดการเอง **
             
             activeBets.forEach(element => element.classList.remove('selected'));
             activeBets.clear();
             
             // ************ 3. บันทึกยอดเงินสุดท้ายลงใน Firestore ด้วย Transaction ************
             await db.runTransaction(async (transaction) => {
-                const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentUsername);
-                // อัปเดตยอดเงินสุดท้ายลงใน DB
+                // *** ใช้ currentEmail เป็น Doc ID ***
+                const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentEmail);
                 transaction.update(userRef, { balance: balance });
             });
             
             updateBetControls();
-            updateTotalCostDisplay(); // รีเซ็ตยอดรวมเป็น 0
-            document.getElementById('roll').disabled = false; // เปิดปุ่ม
+            updateTotalCostDisplay(); 
+            document.getElementById('roll').disabled = false; 
 
-        }, 900); // end setTimeout
+        }, 900); 
 
     } catch (error) {
-        // หาก Transaction ล้มเหลว (เช่น หักเงินไม่ได้, DB Error)
         alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล! ยอดเงินอาจไม่ถูกหัก/เพิ่ม กรุณาลองใหม่');
         
-        // เราต้องดึงยอดเงินล่าสุดจาก DB กลับมา เพื่อซิงค์ข้อมูล (onSnapshot ควรจัดการเอง)
-        const latestBalance = await getUserBalance(currentUsername);
+        const latestBalance = await getUserBalance(currentEmail); // ดึงจาก DB ด้วย Email
         balance = latestBalance; 
         
         balanceDisplay.textContent = balance;
         console.error("Game Roll Transaction Failed: ", error);
         document.getElementById('roll').disabled = false;
         updateBetControls();
-        updateTotalCostDisplay(); // รีเซ็ตยอดรวมเป็น 0
+        updateTotalCostDisplay(); 
         result.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ!';
     }
 });
 
 
 // -----------------------------------------------------
-// 🎯🎯🎯 8. การบังคับล็อกอินอัตโนมัติทันทีเมื่อโหลดหน้า (Fix Session Loss) 🎯🎯🎯
+// 🎯🎯🎯 8. การบังคับล็อกอินอัตโนมัติทันทีเมื่อโหลดหน้า (ใช้ Email) 🎯🎯🎯
 // -----------------------------------------------------
 
-/**
- * ฟังก์ชันนี้จะถูกเรียกใช้ทันทีที่โค้ดถูกรัน เพื่อบังคับให้ Firebase Auth
- * ตรวจสอบสถานะการล็อกอินที่ถูกเก็บไว้ (Persistent) และล็อกอินให้ผู้ใช้ทันที
- */
 async function autoLoginOnLoad() {
-    // ซ่อนหน้าจอทั้งหมดก่อนเพื่อป้องกันการแสดงผลผิดพลาดระหว่างรอสถานะ
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'none';
     
-    // ตรวจสอบ Admin Login (Local Check)
-    const usernameInput = document.getElementById('username').value.trim();
-    const passwordInput = document.getElementById('password').value;
-    if (usernameInput === ADMIN_USER && passwordInput === ADMIN_PASS) {
+    // ตรวจสอบ Admin Login (หากมีการใส่ข้อมูลใน Input)
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const adminEmailCheck = emailInput ? emailInput.value.trim() : null;
+    const adminPassCheck = passwordInput ? passwordInput.value : null;
+
+    if (adminEmailCheck === ADMIN_EMAIL && adminPassCheck === ADMIN_PASS) {
         adminLoginSuccess();
         return;
     }
 
     try {
-        // บังคับให้ Firebase ตรวจสอบสถานะผู้ใช้ที่ถูกเก็บไว้ (Persistent)
         const user = auth.currentUser; 
         
         if (user) {
             // พบผู้ใช้ที่ล็อกอินอยู่
-            const username = user.email.replace(USER_DOMAIN, '');
+            const email = user.email;
+            
             // หากเป็น Admin ให้แสดงหน้า Admin
-            if (username === ADMIN_USER) { 
+            if (email === ADMIN_EMAIL) { 
                 adminLoginSuccess();
                 return;
             }
-            // หากเป็นผู้เล่นทั่วไป ให้เข้าหน้าเกม
-            loginSuccess(username, user.uid);
+            // หากเป็นผู้เล่นทั่วไป ให้เข้าหน้าเกม (ใช้ Email เป็นคีย์หลัก)
+            loginSuccess(email, user.uid);
             return;
         }
 
@@ -1180,7 +1193,6 @@ async function autoLoginOnLoad() {
     }
 }
 
-// ** เรียกใช้ฟังก์ชัน autoLoginOnLoad() ทันทีที่หน้าเว็บโหลดเสร็จ **
 document.addEventListener('DOMContentLoaded', autoLoginOnLoad);
 
 </script>
