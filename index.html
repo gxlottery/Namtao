@@ -213,6 +213,7 @@
     align-items: center;
     justify-content: center;
   }
+  /* ปุ่มรีเฟรช และ ออกจากระบบ */
   #balance button {
     margin-left: 10px; 
     padding: 5px 10px; 
@@ -224,8 +225,9 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   }
   .logout-btn { background: #c30000; color: white; }
+  .refresh-btn { background: #007bff; color: white; }
   
-  /* CSS ใหม่: สำหรับปุ่มบริการ (เติมเงิน/ถอนเงิน) */
+  /* NEW: สำหรับปุ่มบริการ (เติมเงิน/ถอนเงิน) */
   .service-buttons {
       margin-bottom: 20px;
       margin-top: -10px; 
@@ -478,8 +480,6 @@
   
   <div id="admin-screen">
       <h2>🛠️ แผงควบคุมผู้ดูแลระบบ</h2>
-      <p style="color: orange;">**คำเตือน:** ระบบนี้ไม่ปลอดภัยและไม่ควรใช้กับเงินจริง</p>
-      
       <button onclick="renderUserList()" class="refresh-btn-admin">
           🔄 รีเฟรชรายชื่อผู้เล่น
       </button>
@@ -501,6 +501,7 @@
     
     <div id="balance">
         💰 <span id="usernameDisplay">ยอดเงิน:</span> <span id="playerBalance">0</span> บาท
+        <button onclick="forceRefresh()" class="refresh-btn">🔄</button>
         <button onclick="logout()" class="logout-btn">ออกจากระบบ</button>
     </div>
 
@@ -710,6 +711,14 @@ function loginSuccess(username, uid) {
 }
 // **************************************************************************
 
+// NEW: ฟังก์ชันบังคับรีโหลดหน้าจอ
+function forceRefresh() {
+    document.getElementById('result').textContent = 'กำลังรีเฟรชข้อมูล...';
+    // คำสั่งนี้จะทำการโหลดหน้าจอทั้งหมดใหม่ เพื่อให้แน่ใจว่าได้ดึงยอดเงินล่าสุด
+    window.location.reload(); 
+}
+// **************************************************************************
+
 
 function updateBetControls() {
     let defaultBet = Math.min(balance > 0 ? 10 : 0, balance);
@@ -838,13 +847,7 @@ async function updateUserBalance(username, isDeposit) {
         // รีเฟรชรายการใน Admin Panel
         renderUserList();
         
-        // ** เนื่องจากเราใช้ onSnapshot ใน loginSuccess แล้ว โค้ดส่วนนี้จึงไม่จำเป็นต้องอัปเดต balance และ UI ซ้ำ **
-        // if (currentUsername === username) { 
-        //     balance = await getUserBalance(currentUsername); 
-        //     balanceDisplay.textContent = balance;
-        //     updateBetControls();
-        //     updateTotalCostDisplay();
-        // }
+        // ยอดเงินในหน้าผู้เล่นจะอัปเดตอัตโนมัติด้วย onSnapshot ที่เราเพิ่มไป
         
         amountInput.value = ''; // ล้างค่าใน input
 
@@ -897,21 +900,6 @@ function updateTotalCostDisplay() {
     }
 }
 // **********************************************
-
-// ฟังก์ชัน setBet (ไม่ได้ถูกใช้งานแล้ว แต่คงไว้)
-function setBet(amount) {
-    let currentBet = parseInt(betInput.value) || 0;
-    let newBet = currentBet + amount;
-
-    if (newBet < minBet && balance > 0) newBet = minBet; 
-    if (newBet > balance || newBet > maxBetDefault) {
-      newBet = Math.min(balance, maxBetDefault);
-    }
-    if (balance === 0) newBet = 0;
-
-    betInput.value = newBet;
-    updateTotalCostDisplay(); 
-}
 
 function setMaxBet() {
     let max = Math.min(balance, maxBetDefault);
@@ -1087,7 +1075,6 @@ document.getElementById('roll').addEventListener('click', async () => {
             }
 
             // ** ไม่ต้องอัปเดต balanceDisplay ที่นี่ เพราะ onSnapshot จะจัดการเอง **
-            // balanceDisplay.textContent = balance; 
             
             activeBets.forEach(element => element.classList.remove('selected'));
             activeBets.clear();
