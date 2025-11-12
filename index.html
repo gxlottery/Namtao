@@ -31,8 +31,6 @@
     animation: gradientBG 15s ease infinite;
     color: #fff;
     padding: 20px;
-    /* เปลี่ยนจาก overflow-x: hidden; เป็นการจัดการใน html, body ด้านบน */
-    /* min-height: 100vh; ถูกแทนที่ด้วย height: 100vh; ด้านบน */
   }
   @keyframes gradientBG {
     0% { background-position: 0% 50%; }
@@ -108,7 +106,7 @@
       background: rgba(0, 0, 0, 0.6);
       padding: 20px;
       border-radius: 15px;
-      /* ต้องตั้งค่าให้ Admin screen เลื่อนได้ ถ้าเนื้อหามีเยอะ */
+      /* ทำให้ Admin screen เลื่อนได้ ถ้าเนื้อหามีเยอะ */
       max-height: calc(100vh - 40px);
       overflow-y: auto;
   }
@@ -198,7 +196,7 @@
     /* ทำให้ Game Screen เลื่อนได้ ถ้าเนื้อหามีเยอะ แต่ Body จะไม่เลื่อน */
     max-height: 100vh;
     overflow-y: auto;
-    padding-top: 20px; /* เพิ่ม padding ด้านบนเล็กน้อย */
+    padding-top: 20px; 
     padding-bottom: 20px;
   }
   #balance {
@@ -317,6 +315,7 @@
   
   /* ปุ่มเดิมพันรวม (High/Low/Triple) */
   .compound-bets {
+      /* ปรับให้แสดงแนวนอนโดยใช้ Flexbox เป็นค่าเริ่มต้น */
       display: flex;
       justify-content: space-between;
       gap: 15px;
@@ -386,11 +385,47 @@
     .bet-btn-base { font-size: 35px; border-radius: 20px; }
     .bet-control { flex-direction: column; gap: 8px; }
     #betAmount { width: 100%; max-width: 150px; }
-    .compound-bets { flex-direction: column; }
     #user-list li { flex-direction: column; align-items: flex-start; }
     .admin-controls { width: 100%; justify-content: space-between; }
     .admin-controls input[type="number"] { width: 40%; }
     .admin-controls button { flex: 1; }
+    
+    /* ********************************************************* */
+    /* >>>>>> การแก้ไขใหม่: บีบอัดหน้าจอและจัดเรียงปุ่มรวม <<<<<<< */
+    /* ********************************************************* */
+    h1 { margin-top: 5px; margin-bottom: 10px; font-size: 20px; } 
+    #balance { margin-bottom: 15px; padding: 8px 15px; } 
+    
+    /* 1. ปุ่มบริการ (เติมเงิน/ถอนเงิน) - ลดขนาด */
+    .service-buttons { margin-bottom: 10px; margin-top: -5px; } 
+    .service-btn {
+        padding: 8px 15px; 
+        font-size: 16px;
+    }
+
+    /* 2. ปุ่มรวม (สูง/ต่ำ/ตอง) - จัดเรียงแนวนอนและลดขนาด */
+    .compound-bets {
+        display: grid; 
+        grid-template-columns: repeat(3, 1fr); /* 3 คอลัมน์แนวนอน */
+        gap: 8px; /* ลดช่องว่าง */
+        margin-top: 15px; 
+    }
+    .bet-btn-compound {
+        padding: 8px 5px; /* ลด Padding ให้เล็ก */
+        font-size: 14px; /* ลดขนาด Font */
+        min-height: 50px; 
+    }
+
+    /* 3. ปุ่มหมุนลูกเต๋า - ลดขนาด */
+    button#roll {
+        padding: 12px 30px; 
+        font-size: 18px;
+    }
+
+    /* องค์ประกอบอื่นๆ ที่ถูกบีบอัด */
+    .dice { font-size: 50px; margin: 10px 0; } 
+    .result { margin-top: 10px; font-size: 20px; }
+    .betting-area { margin-bottom: 15px; } 
   }
 </style>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -796,7 +831,7 @@ async function getUserBalance(username) {
 
 
 // ===============================================
-// 6. Game Play and Database Update
+// 6. Game Logic Handlers
 // ===============================================
 
 const animals = ['น้ำเต้า','ปู','ปลา','เสือ','ไก่','กุ้ง'];
