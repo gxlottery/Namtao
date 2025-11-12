@@ -6,6 +6,21 @@
 <title>🎲 เกมน้ำเต้าปูปลา (Firebase Edition)</title>
 
 <style>
+  /* ******************************************************** */
+  /* >>>>>> การแก้ไขเพื่อล็อคหน้าจอ (ห้ามเลื่อน) <<<<<<< */
+  /* ******************************************************** */
+  html, body {
+    /* ทำให้ Body และ HTML ใช้ความสูงและความกว้างของหน้าจอทั้งหมด */
+    width: 100vw;
+    height: 100vh;
+    /* ห้ามการเลื่อน (Scroll) ทั้งแนวนอนและแนวตั้ง */
+    overflow: hidden; 
+    /* ปรับ padding/margin ให้อยู่ที่ 0 เพื่อให้แน่ใจว่าไม่มีช่องว่างเกินมา */
+    margin: 0;
+    padding: 0;
+  }
+  /* ******************************************************** */
+  
   /* CSS สำหรับพื้นหลังและ Fonts */
   @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap');
   body {
@@ -16,8 +31,8 @@
     animation: gradientBG 15s ease infinite;
     color: #fff;
     padding: 20px;
-    overflow-x: hidden;
-    min-height: 100vh;
+    /* เปลี่ยนจาก overflow-x: hidden; เป็นการจัดการใน html, body ด้านบน */
+    /* min-height: 100vh; ถูกแทนที่ด้วย height: 100vh; ด้านบน */
   }
   @keyframes gradientBG {
     0% { background-position: 0% 50%; }
@@ -93,6 +108,9 @@
       background: rgba(0, 0, 0, 0.6);
       padding: 20px;
       border-radius: 15px;
+      /* ต้องตั้งค่าให้ Admin screen เลื่อนได้ ถ้าเนื้อหามีเยอะ */
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
   }
   #admin-screen h2 {
       color: #33ff33;
@@ -175,7 +193,14 @@
   .logout-btn-admin { background-color: #ccc; color: black; margin-top: 20px; width: 100%; max-width: 200px; display: block; margin-left: auto; margin-right: auto; }
 
   /* CSS สำหรับหน้าเกม */
-  #game-screen { display: none; }
+  #game-screen { 
+    display: none; 
+    /* ทำให้ Game Screen เลื่อนได้ ถ้าเนื้อหามีเยอะ แต่ Body จะไม่เลื่อน */
+    max-height: 100vh;
+    overflow-y: auto;
+    padding-top: 20px; /* เพิ่ม padding ด้านบนเล็กน้อย */
+    padding-bottom: 20px;
+  }
   #balance {
     background: rgba(255,255,255,0.2);
     display: inline-block;
@@ -481,7 +506,7 @@ const firebaseConfig = {
     measurementId: "G-09PW99QK06" 
 };
 
-// ชื่อคอลเลกชันใน Firestore สำหรับเกมนี้โดยเฉพาะ (ป้องกันการตีกับ Gxlotterry)
+// ชื่อคอลเลกชันใน Firestore สำหรับเกมนี้โดยเฉพาะ (ป้องกันการตีกับ Gxlottery)
 const HOO_HEY_HOW_COLLECTION = "hoo_hey_how_players";
 
 // ===============================================
@@ -574,6 +599,8 @@ async function handleAuth() {
             errorMessage.textContent = 'ชื่อผู้ใช้นี้มีคนใช้แล้ว';
         } else if (error.code === 'auth/weak-password') {
             errorMessage.textContent = 'รหัสผ่านอ่อนแอเกินไป (ต้องมีอย่างน้อย 6 ตัวอักษร)';
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMessage.textContent = 'การเข้าสู่ระบบถูกปิดใช้งาน! กรุณาแจ้งแอดมินให้เปิดใช้งาน Email/Password ใน Firebase Console';
         } else {
             console.error(error);
             errorMessage.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
