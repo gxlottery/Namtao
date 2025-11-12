@@ -348,6 +348,15 @@
 
   .bet-control { margin-bottom: 25px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
   .bet-control label { font-size: 16px; font-weight: bold; }
+  
+  /* NEW: สำหรับจัดกลุ่มปุ่มและ input ให้เป็นแนวนอน */
+  .bet-input-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+  }
+
   #betAmount { width: 120px; padding: 10px; border-radius: 10px; border: 3px solid gold; text-align: center; font-size: 18px; color: black; background-color: #f9f9f9; box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2); }
   .bet-btn { padding: 10px 15px; border: none; border-radius: 10px; background: #FFDC00; color: black; cursor: pointer; transition: all 0.1s ease; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
   
@@ -383,46 +392,61 @@
     body { padding: 10px; }
     .single-bets { max-width: none; }
     .bet-btn-base { font-size: 35px; border-radius: 20px; }
-    .bet-control { flex-direction: column; gap: 8px; }
-    #betAmount { width: 100%; max-width: 150px; }
+    
+    /* แก้ไข: ทำให้ Label อยู่ด้านบน และ Input/Button อยู่ด้วยกัน */
+    .bet-control { 
+      flex-direction: column; 
+      gap: 8px; 
+      align-items: center; /* จัดให้ตรงกลาง */
+    }
+    .bet-control label {
+        width: 100%; /* ทำให้ Label กินพื้นที่เต็ม */
+        text-align: center;
+        margin-bottom: 5px;
+    }
+
+    .bet-input-group {
+        width: 100%;
+    }
+    
+    /* ปรับขนาด Input และปุ่ม 'เดิมพันสูงสุด' ในกลุ่มใหม่ */
+    #betAmount { 
+      width: 100px; 
+      max-width: 100px;
+    }
+    .bet-input-group .bet-btn {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
     #user-list li { flex-direction: column; align-items: flex-start; }
     .admin-controls { width: 100%; justify-content: space-between; }
     .admin-controls input[type="number"] { width: 40%; }
     .admin-controls button { flex: 1; }
     
-    /* ********************************************************* */
-    /* >>>>>> การแก้ไขใหม่: บีบอัดหน้าจอและจัดเรียงปุ่มรวม <<<<<<< */
-    /* ********************************************************* */
+    /* องค์ประกอบที่ถูกบีบอัด */
     h1 { margin-top: 5px; margin-bottom: 10px; font-size: 20px; } 
     #balance { margin-bottom: 15px; padding: 8px 15px; } 
-    
-    /* 1. ปุ่มบริการ (เติมเงิน/ถอนเงิน) - ลดขนาด */
     .service-buttons { margin-bottom: 10px; margin-top: -5px; } 
     .service-btn {
         padding: 8px 15px; 
         font-size: 16px;
     }
-
-    /* 2. ปุ่มรวม (สูง/ต่ำ/ตอง) - จัดเรียงแนวนอนและลดขนาด */
     .compound-bets {
         display: grid; 
-        grid-template-columns: repeat(3, 1fr); /* 3 คอลัมน์แนวนอน */
-        gap: 8px; /* ลดช่องว่าง */
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 8px; 
         margin-top: 15px; 
     }
     .bet-btn-compound {
-        padding: 8px 5px; /* ลด Padding ให้เล็ก */
-        font-size: 14px; /* ลดขนาด Font */
+        padding: 8px 5px; 
+        font-size: 14px; 
         min-height: 50px; 
     }
-
-    /* 3. ปุ่มหมุนลูกเต๋า - ลดขนาด */
     button#roll {
         padding: 12px 30px; 
         font-size: 18px;
     }
-
-    /* องค์ประกอบอื่นๆ ที่ถูกบีบอัด */
     .dice { font-size: 50px; margin: 10px 0; } 
     .result { margin-top: 10px; font-size: 20px; }
     .betting-area { margin-bottom: 15px; } 
@@ -507,10 +531,11 @@
 
     <div class="bet-control">
       <label for="betAmount">จำนวนเงินเดิมพัน (ต่อการเลือก):</label>
-      <input type="number" id="betAmount" value="10" min="0" max="1000">
-      <button class="bet-btn" onclick="setBet(10)">+10</button>
-      <button class="bet-btn" onclick="setBet(50)">+50</button>
-      <button class="bet-btn" onclick="setMaxBet()">เดิมพันสูงสุด</button>
+      
+      <div class="bet-input-group">
+          <button class="bet-btn" onclick="setMaxBet()">เดิมพันสูงสุด</button>
+          <input type="number" id="betAmount" value="10" min="0" max="1000">
+      </div>
       
       <div id="totalBetDisplay" style="width: 100%; margin-top: 10px; font-weight: bold; color: #33ff33; font-size: 18px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px;">
           ยอดเดิมพันรวม: <span>0</span> บาท
@@ -864,7 +889,9 @@ function updateTotalCostDisplay() {
 }
 // **********************************************
 
+// ฟังก์ชัน setBet ถูกเก็บไว้แต่ไม่มีปุ่มเรียกใช้งานแล้ว
 function setBet(amount) {
+    // ฟังก์ชันนี้ไม่ถูกใช้งานแล้ว แต่คงไว้เผื่อมีการเพิ่มปุ่ม +XX เข้ามาในอนาคต
     let currentBet = parseInt(betInput.value) || 0;
     let newBet = currentBet + amount;
 
@@ -875,7 +902,7 @@ function setBet(amount) {
     if (balance === 0) newBet = 0;
 
     betInput.value = newBet;
-    updateTotalCostDisplay(); // <--- เรียกใช้ทุกครั้งที่เปลี่ยนจำนวนเงิน
+    updateTotalCostDisplay(); 
 }
 
 function setMaxBet() {
