@@ -566,7 +566,7 @@ const firebaseConfig = {
     measurementId: "G-09PW99QK06" 
 };
 
-// ชื่อคอลเลกชันใน Firestore สำหรับเกมนี้โดยเฉพาะ (ป้องกันการตีกับ Gxlottery)
+// ชื่อคอลเลกชันใน Firestore สำหรับเกมนี้โดยเฉพาะ
 const HOO_HEY_HOW_COLLECTION = "hoo_hey_how_players";
 
 // ===============================================
@@ -672,35 +672,44 @@ async function handleAuth() {
 // 4. Game Logic Handlers
 // ===============================================
 
-async function loginSuccess(username, uid) {
+// *** แก้ไขล่าสุด: เปลี่ยนเป็น onSnapshot เพื่ออัปเดตยอดเงิน Real-time ***
+function loginSuccess(username, uid) {
     currentUsername = username;
     
-    // ดึงยอดเงินจาก Firestore (ใช้คอลเลกชันเฉพาะ)
-    const userDoc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(username).get();
-    
-    // หากไม่มี Document ใน Firestore (อาจเกิดจากการสมัครสมาชิกก่อนเพิ่ม Firestore) ให้สร้างใหม่
-    if (!userDoc.exists) {
-        balance = 0;
-        await db.collection(HOO_HEY_HOW_COLLECTION).doc(username).set({
-            username: username,
-            balance: balance,
-            uid: uid
-        });
-    } else {
-        balance = userDoc.data().balance;
-    }
-    
+    // ตั้งค่า UI ทั่วไป
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
     
     const usernameDisplay = document.getElementById('usernameDisplay');
     usernameDisplay.textContent = `ยอดเงิน ${username}:`; 
-    
-    balanceDisplay.textContent = balance;
-    updateBetControls();
-    updateTotalCostDisplay(); // แสดงยอดเดิมพันรวมเริ่มต้น
+
+    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(username);
+
+    // ใช้ onSnapshot เพื่อฟังการเปลี่ยนแปลงแบบ Real-time
+    userRef.onSnapshot(doc => {
+        if (doc.exists) {
+            // อัปเดตตัวแปร 'balance' ด้วยยอดเงินล่าสุดจาก DB
+            balance = doc.data().balance; 
+        } else {
+            // กรณีที่ Doc หายไป (ไม่ควรเกิดขึ้น)
+            balance = 0; 
+        }
+        
+        // อัปเดต UI ทั้งหมดทันทีที่ยอดเงินเปลี่ยน
+        balanceDisplay.textContent = balance;
+        updateBetControls(); // อัปเดตปุ่มและขีดจำกัดการเดิมพัน
+        updateTotalCostDisplay(); // อัปเดตยอดเดิมพันรวม
+
+        console.log(`ยอดเงินผู้เล่น ${username} ถูกอัปเดตเป็น ${balance} บาท (Real-time)`);
+        
+    }, err => {
+        console.error("Error listening to user balance:", err);
+        document.getElementById('result').textContent = '⚠️ ข้อผิดพลาด: ไม่สามารถอัปเดตยอดเงินได้แบบ Real-time';
+    });
 }
+// **************************************************************************
+
 
 function updateBetControls() {
     let defaultBet = Math.min(balance > 0 ? 10 : 0, balance);
@@ -826,16 +835,16 @@ async function updateUserBalance(username, isDeposit) {
             }
         });
 
-        // รีเฟรชรายการ
+        // รีเฟรชรายการใน Admin Panel
         renderUserList();
         
-        // อัปเดตยอดเงินในหน้าเกมหากผู้เล่นกำลังล็อกอินอยู่
-        if (currentUsername === username) {
-            balance = await getUserBalance(currentUsername); 
-            balanceDisplay.textContent = balance;
-            updateBetControls();
-            updateTotalCostDisplay();
-        }
+        // ** เนื่องจากเราใช้ onSnapshot ใน loginSuccess แล้ว โค้ดส่วนนี้จึงไม่จำเป็นต้องอัปเดต balance และ UI ซ้ำ **
+        // if (currentUsername === username) { 
+        //     balance = await getUserBalance(currentUsername); 
+        //     balanceDisplay.textContent = balance;
+        //     updateBetControls();
+        //     updateTotalCostDisplay();
+        // }
         
         amountInput.value = ''; // ล้างค่าใน input
 
@@ -871,7 +880,7 @@ const rollSound = document.getElementById('rollSound');
 const winSound = document.getElementById('winSound');
 
 
-// **** ฟังก์ชันใหม่: อัปเดตยอดรวมที่ต้องจ่าย ****
+// ฟังก์ชันใหม่: อัปเดตยอดรวมที่ต้องจ่าย
 function updateTotalCostDisplay() {
     const amountPerBet = parseInt(betInput.value) || 0;
     const totalCost = amountPerBet * activeBets.size;
@@ -889,9 +898,8 @@ function updateTotalCostDisplay() {
 }
 // **********************************************
 
-// ฟังก์ชัน setBet ถูกเก็บไว้แต่ไม่มีปุ่มเรียกใช้งานแล้ว
+// ฟังก์ชัน setBet (ไม่ได้ถูกใช้งานแล้ว แต่คงไว้)
 function setBet(amount) {
-    // ฟังก์ชันนี้ไม่ถูกใช้งานแล้ว แต่คงไว้เผื่อมีการเพิ่มปุ่ม +XX เข้ามาในอนาคต
     let currentBet = parseInt(betInput.value) || 0;
     let newBet = currentBet + amount;
 
@@ -1078,7 +1086,8 @@ document.getElementById('roll').addEventListener('click', async () => {
                 result.textContent = `เสียใจ! ไม่มีรายการเดิมพันที่ชนะ 😢 (เสีย ${totalBetCost} บาท)`;
             }
 
-            balanceDisplay.textContent = balance;
+            // ** ไม่ต้องอัปเดต balanceDisplay ที่นี่ เพราะ onSnapshot จะจัดการเอง **
+            // balanceDisplay.textContent = balance; 
             
             activeBets.forEach(element => element.classList.remove('selected'));
             activeBets.clear();
@@ -1100,7 +1109,7 @@ document.getElementById('roll').addEventListener('click', async () => {
         // หาก Transaction ล้มเหลว (เช่น หักเงินไม่ได้, DB Error)
         alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล! ยอดเงินอาจไม่ถูกหัก/เพิ่ม กรุณาลองใหม่');
         
-        // เราต้องดึงยอดเงินล่าสุดจาก DB กลับมา เพื่อซิงค์ข้อมูล
+        // เราต้องดึงยอดเงินล่าสุดจาก DB กลับมา เพื่อซิงค์ข้อมูล (onSnapshot ควรจัดการเอง)
         const latestBalance = await getUserBalance(currentUsername);
         balance = latestBalance; 
         
