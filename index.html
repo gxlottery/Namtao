@@ -577,7 +577,8 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore(); 
 
-const ADMIN_EMAIL = 'admin@game.local'; 
+// *** การแก้ไข: เปลี่ยน ADMIN_EMAIL ตามที่คุณต้องการ ***
+const ADMIN_EMAIL = 'admin@gmail.com'; 
 const ADMIN_PASS = '03774570'; 
 
 let isLoginMode = true;
@@ -620,20 +621,20 @@ async function handleAuth() {
     const errorMessage = document.getElementById('error-message');
     errorMessage.textContent = ''; 
     
-    // *** NEW: การตรวจสอบรูปแบบอีเมล (ป้องกัน Error auth/invalid-email) ***
+    // *** การแก้ไข: การตรวจสอบรูปแบบอีเมล (ป้องกัน Error auth/invalid-email) ***
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         errorMessage.textContent = '❌ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (ห้ามมีช่องว่างนำหน้า/ตามหลัง)';
         return;
     }
-    // *** END NEW ***
+    // *** END การแก้ไข ***
     
     if (!email || !password) {
         errorMessage.textContent = 'กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน';
         return;
     }
     
-    // ตรวจสอบ Admin Login
+    // *** การแก้ไข: ตรวจสอบ Admin Login ด้วยอีเมลใหม่ ***
     if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
         adminLoginSuccess();
         return;
@@ -645,7 +646,7 @@ async function handleAuth() {
         if (isLoginMode) {
             // LOGIN
             await auth.signInWithEmailAndPassword(email, password);
-            // NEW: บังคับรีโหลดเพื่อให้ autoLoginOnLoad ทำงานและเข้าหน้าเกม
+            // บังคับรีโหลดเพื่อให้ autoLoginOnLoad ทำงานและเข้าหน้าเกม
             window.location.reload(); 
         } else {
             // SIGN UP
@@ -674,6 +675,7 @@ async function handleAuth() {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
+            // ใช้ Email เป็น Doc ID ใน Firestore
             await db.collection(HOO_HEY_HOW_COLLECTION).doc(email).set({
                 email: email, 
                 displayName: gameUsername, 
@@ -727,7 +729,7 @@ function openLineOAPopup() {
     );
 }
 
-// *** แก้ไข: เพิ่ม History State เพื่อจัดการปุ่มย้อนกลับ ***
+// *** การแก้ไข: เพิ่ม History State เพื่อจัดการปุ่มย้อนกลับ (Back Button) ***
 async function loginSuccess(email, uid) {
     currentEmail = email;
     
@@ -735,7 +737,7 @@ async function loginSuccess(email, uid) {
     document.getElementById('admin-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
     
-    // NEW: ตั้ง History State เพื่อให้เมื่อผู้เล่นกด Back Button ยังคงอยู่หน้าเกม
+    // ตั้ง History State เพื่อให้เมื่อผู้เล่นกด Back Button ยังคงอยู่หน้าเกม
     history.pushState({ screen: 'game' }, '', window.location.pathname);
     
     const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
@@ -798,7 +800,7 @@ function adminLoginSuccess() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'block';
-    // NEW: ตั้ง History State เพื่อให้เมื่อผู้เล่นกด Back Button ยังคงอยู่หน้า Admin
+    // ตั้ง History State เพื่อให้เมื่อผู้เล่นกด Back Button ยังคงอยู่หน้า Admin
     history.pushState({ screen: 'admin' }, '', window.location.pathname);
     renderUserList(); 
 }
@@ -1161,6 +1163,7 @@ async function autoLoginOnLoad() {
     const adminEmailCheck = emailInput ? emailInput.value.trim() : null;
     const adminPassCheck = passwordInput ? passwordInput.value : null;
 
+    // *** ตรวจสอบ ADMIN LOGIN (Hardcoded) ***
     if (adminEmailCheck === ADMIN_EMAIL && adminPassCheck === ADMIN_PASS) {
         adminLoginSuccess();
         return;
@@ -1172,6 +1175,7 @@ async function autoLoginOnLoad() {
         if (user) {
             const email = user.email;
             
+            // ตรวจสอบว่าเป็น Admin ที่ล็อกอินผ่าน Firebase Auth (ถ้าคุณยกเลิก Hardcoded ไปแล้ว)
             if (email === ADMIN_EMAIL) { 
                 adminLoginSuccess();
                 return;
