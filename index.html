@@ -473,7 +473,8 @@
   
   <div id="auth-screen" style="display:none;">
     <h1>เข้าสู่ระบบ / สมัครสมาชิก 🎯</h1>
-    <div class="auth-container">
+    
+    <form class="auth-container" onsubmit="handleAuth(event); return false;">
       <h2 id="auth-title">เข้าสู่ระบบ</h2>
       
       <div class="input-wrapper">
@@ -495,11 +496,11 @@
           </div>
       </div>
 
-      <button id="auth-button" onclick="handleAuth()">เข้าสู่ระบบ</button>
+      <button id="auth-button" type="submit">เข้าสู่ระบบ</button>
       <p id="error-message" style="color: red; margin-top: 10px; font-size: 14px;"></p>
       
       <a class="toggle-link" onclick="toggleAuthMode()">ยังไม่มีบัญชี? สมัครสมาชิกที่นี่</a>
-    </div>
+    </form>
 
     <div class="service-buttons" style="margin-top: 30px;">
         <p style="font-size: 14px; margin-bottom: 5px; color: #f0f0f0;">ปัญหาการเข้าสู่ระบบ/ลืมรหัสผ่าน</p>
@@ -669,22 +670,36 @@ function toggleAuthMode() {
 }
 
 // ===============================================
-// 3. User Authentication
+// 3. User Authentication (ปรับปรุงการจัดการ Submit และ Error)
 // ===============================================
-async function handleAuth() {
+async function handleAuth(event) {
+    // *** แก้ไข: ป้องกันการส่งฟอร์มมาตรฐานของเบราว์เซอร์ ***
+    if (event) {
+        event.preventDefault(); 
+    }
+
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const errorMessage = document.getElementById('error-message');
     errorMessage.textContent = ''; 
     
+    // ตั้งค่าปุ่มเป็นสถานะกำลังโหลด
+    const authButton = document.getElementById('auth-button');
+    authButton.textContent = 'กำลังดำเนินการ...';
+    authButton.disabled = true;
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         errorMessage.textContent = '❌ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (ห้ามมีช่องว่างนำหน้า/ตามหลัง)';
-        return;
     }
     
     if (!email || !password) {
         errorMessage.textContent = 'กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน';
+    }
+    
+    if (errorMessage.textContent !== '') {
+        authButton.textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
+        authButton.disabled = false;
         return;
     }
     
@@ -698,8 +713,14 @@ async function handleAuth() {
         await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         if (isLoginMode) {
+            // *** แก้ไข: ล็อกอิน และเรียก checkAuthStateAndRoute() แทน reload ***
             await auth.signInWithEmailAndPassword(email, password);
-            window.location.reload(); 
+            
+            // ล้างช่องกรอกหลังจากเข้าสู่ระบบสำเร็จ
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+            
+            checkAuthStateAndRoute(); 
         } else {
             // SIGN UP Logic (with 12-char password check)
             const confirmPassword = document.getElementById('confirmPassword').value;
@@ -707,22 +728,27 @@ async function handleAuth() {
             
             if (!gameUsername || gameUsername.length < 3 || gameUsername.length > 20) {
                  errorMessage.textContent = 'ชื่อผู้ใช้ในเกมต้องมี 3-20 ตัวอักษร';
-                 return;
             }
             
             if (password.length < 12) { 
                 errorMessage.textContent = 'รหัสผ่านต้องมีความยาวอย่างน้อย 12 ตัวอักษร'; 
-                return;
             }
 
             if (password !== confirmPassword) {
                 errorMessage.textContent = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
-                return;
             }
             
+            if (errorMessage.textContent !== '') {
+                 authButton.textContent = 'สมัครสมาชิก';
+                 authButton.disabled = false;
+                 return;
+            }
+
             const existingUsernames = await db.collection(HOO_HEY_HOW_COLLECTION).where('displayName', '==', gameUsername).get();
             if (!existingUsernames.empty) {
                 errorMessage.textContent = '❌ ชื่อผู้ใช้นี้มีคนใช้แสดงในเกมแล้ว! กรุณาเลือกชื่ออื่น';
+                authButton.textContent = 'สมัครสมาชิก';
+                authButton.disabled = false;
                 return;
             }
             
@@ -741,6 +767,9 @@ async function handleAuth() {
         }
         
     } catch (error) {
+        // *** แก้ไข: พิมพ์ error เต็มใน Console สำหรับ Debug ***
+        console.error("Firebase Auth Error Details:", error); 
+        
         let displayError = 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาติดต่อแอดมิน';
 
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -754,11 +783,15 @@ async function handleAuth() {
         } else if (error.code === 'auth/invalid-email') {
              displayError = 'รูปแบบอีเมลไม่ถูกต้อง';
         } else {
-            console.error(error);
-            displayError = `เกิดข้อผิดพลาด: ${error.message}`;
+            displayError = `เกิดข้อผิดพลาด: ${error.message}`; 
         }
         
         errorMessage.textContent = displayError;
+        
+    } finally {
+        // คืนค่าปุ่มเข้าสู่ระบบเสมอ
+        authButton.textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
+        authButton.disabled = false;
     }
 }
 
@@ -1187,7 +1220,7 @@ document.getElementById('roll').addEventListener('click', async () => {
 // 🎯🎯🎯 8. การบังคับล็อกอินอัตโนมัติทันทีเมื่อโหลดหน้า (Auto Login) 🎯🎯🎯
 // -----------------------------------------------------
 
-// *** NEW: เปลี่ยนชื่อฟังก์ชันเป็น checkAuthStateAndRoute ***
+// *** แก้ไข: ปรับปรุงฟังก์ชันหลักให้ทำงานได้ทั้ง OnLoad, OnFocus และหลัง Login ***
 async function checkAuthStateAndRoute() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
@@ -1237,14 +1270,12 @@ window.addEventListener('popstate', (event) => {
     }
 });
 
-// *** NEW: เพิ่ม Listener เมื่อผู้ใช้กลับมาที่หน้าต่าง (Focus) ***
+// *** แก้ไข: Listener สำหรับ window.focus เพื่อแก้ปัญหา Line OA Logout ***
 window.addEventListener('focus', function() {
-    // หน่วงเวลาเล็กน้อยเพื่อให้แน่ใจว่า Firebase ได้เรียกคืนสถานะแล้ว
-    setTimeout(() => {
-        if (auth.currentUser) {
-            checkAuthStateAndRoute();
-        }
-    }, 100); 
+    // ตรวจสอบสถานะการล็อกอินทันทีที่หน้าต่างได้รับโฟกัส
+    if (auth.currentUser) {
+        checkAuthStateAndRoute(); 
+    }
 });
 
 document.addEventListener('DOMContentLoaded', checkAuthStateAndRoute);
