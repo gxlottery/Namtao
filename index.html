@@ -10,12 +10,9 @@
   /* >>>>>> การแก้ไขเพื่อล็อคหน้าจอ (ห้ามเลื่อน) <<<<<<< */
   /* ******************************************************** */
   html, body {
-    /* ทำให้ Body และ HTML ใช้ความสูงและความกว้างของหน้าจอทั้งหมด */
     width: 100vw;
     height: 100vh;
-    /* ห้ามการเลื่อน (Scroll) ทั้งแนวนอนและแนวตั้ง */
     overflow: hidden; 
-    /* ปรับ padding/margin ให้อยู่ที่ 0 เพื่อให้แน่ใจว่าไม่มีช่องว่างเกินมา */
     margin: 0;
     padding: 0;
   }
@@ -52,10 +49,20 @@
     margin: 50px auto 0px auto; 
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   }
+  
+  /* *** Wrapper for input and eye icon *** */
+  .input-wrapper {
+      position: relative;
+      width: 90%; 
+      margin: 10px auto;
+      text-align: left;
+  }
+  
   .auth-container input {
-    width: 90%;
+    width: 100%; /* Take full width of wrapper */
     padding: 12px;
-    margin: 10px 0;
+    padding-right: 40px; /* Space for the icon */
+    margin: 0; /* Remove margin from input, use wrapper margin */
     border-radius: 8px;
     border: none;
     font-size: 16px;
@@ -64,6 +71,20 @@
     color: #333;
     box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
   }
+  
+  /* *** Eye Icon Style *** */
+  .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #666;
+      font-size: 18px;
+      user-select: none;
+      z-index: 10;
+  }
+  
   .auth-container button {
     display: block;
     width: 90%;
@@ -454,12 +475,24 @@
     <h1>เข้าสู่ระบบ / สมัครสมาชิก 🎯</h1>
     <div class="auth-container">
       <h2 id="auth-title">เข้าสู่ระบบ</h2>
-      <input type="email" id="email" placeholder="อีเมล (Email)" required>
-      <input type="password" id="password" placeholder="รหัสผ่าน (Password)" required>
+      
+      <div class="input-wrapper">
+          <input type="email" id="email" placeholder="อีเมล (Email)" required>
+      </div>
+
+      <div class="input-wrapper">
+          <input type="password" id="password" placeholder="รหัสผ่าน (Password)" required>
+          <span class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁️</span>
+      </div>
       
       <div id="signup-fields" style="display:none;">
-          <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required>
-          <input type="text" id="gameUsername" placeholder="ชื่อผู้ใช้ที่จะแสดงในเกม" required>
+          <div class="input-wrapper">
+              <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required>
+              <span class="toggle-password" onclick="togglePasswordVisibility('confirmPassword', this)">👁️</span>
+          </div>
+          <div class="input-wrapper">
+              <input type="text" id="gameUsername" placeholder="ชื่อผู้ใช้ที่จะแสดงในเกม" required>
+          </div>
       </div>
 
       <button id="auth-button" onclick="handleAuth()">เข้าสู่ระบบ</button>
@@ -577,9 +610,8 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore(); 
 
-// *** อัปเดตล่าสุด: รหัสผ่านแอดมินใหม่ (ปลอดภัยสูง) ***
 const ADMIN_EMAIL = 'admin@gmail.com'; 
-const ADMIN_PASS = 'Asura@Ransom4570!'; // <<< รหัสผ่านแอดมินใหม่
+const ADMIN_PASS = 'Asura@Ransom4570!'; // รหัสผ่านแอดมินใหม่
 
 let isLoginMode = true;
 const balanceDisplay = document.getElementById('playerBalance');
@@ -590,6 +622,18 @@ let currentDisplayName = null;
 
 const minBet = 10;
 const maxBetDefault = 1000;
+
+// ฟังก์ชันเปิด/ปิดการแสดงรหัสผ่าน
+function togglePasswordVisibility(inputId, iconElement) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        iconElement.textContent = '🙈'; // เปลี่ยนไอคอนเป็นปิดตา (แนะนำให้ซ่อน)
+    } else {
+        input.type = 'password';
+        iconElement.textContent = '👁️'; // เปลี่ยนไอคอนเป็นเปิดตา (แนะนำให้แสดง)
+    }
+}
 
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
@@ -610,10 +654,22 @@ function toggleAuthMode() {
     if (document.getElementById('gameUsername')) {
          document.getElementById('gameUsername').value = '';
     }
+    
+    // ตรวจสอบและรีเซ็ตไอคอนเปิด/ปิดรหัสผ่าน
+    const passIcon = document.querySelector('#password + .toggle-password');
+    if (passIcon) {
+        document.getElementById('password').type = 'password';
+        passIcon.textContent = '👁️';
+    }
+    const confirmPassIcon = document.querySelector('#confirmPassword + .toggle-password');
+    if (confirmPassIcon) {
+        document.getElementById('confirmPassword').type = 'password';
+        confirmPassIcon.textContent = '👁️';
+    }
 }
 
 // ===============================================
-// 3. User Authentication (พร้อมการตรวจสอบรูปแบบอีเมล)
+// 3. User Authentication
 // ===============================================
 async function handleAuth() {
     const email = document.getElementById('email').value.trim();
@@ -621,20 +677,18 @@ async function handleAuth() {
     const errorMessage = document.getElementById('error-message');
     errorMessage.textContent = ''; 
     
-    // *** การแก้ไข: การตรวจสอบรูปแบบอีเมล (ป้องกัน Error auth/invalid-email) ***
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         errorMessage.textContent = '❌ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (ห้ามมีช่องว่างนำหน้า/ตามหลัง)';
         return;
     }
-    // *** END การแก้ไข ***
     
     if (!email || !password) {
         errorMessage.textContent = 'กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน';
         return;
     }
     
-    // *** การแก้ไข: ตรวจสอบ Admin Login ด้วยอีเมลใหม่และรหัสผ่านใหม่ ***
+    // ตรวจสอบ Admin Login (Hardcoded)
     if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
         adminLoginSuccess();
         return;
@@ -644,12 +698,10 @@ async function handleAuth() {
         await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         if (isLoginMode) {
-            // LOGIN
             await auth.signInWithEmailAndPassword(email, password);
-            // บังคับรีโหลดเพื่อให้ autoLoginOnLoad ทำงานและเข้าหน้าเกม
             window.location.reload(); 
         } else {
-            // SIGN UP
+            // SIGN UP Logic (with 12-char password check)
             const confirmPassword = document.getElementById('confirmPassword').value;
             const gameUsername = document.getElementById('gameUsername').value.trim();
             
@@ -658,12 +710,10 @@ async function handleAuth() {
                  return;
             }
             
-            // *** การแก้ไขล่าสุด: บังคับใช้รหัสผ่าน 12 หลักเพื่อความปลอดภัย ***
             if (password.length < 12) { 
                 errorMessage.textContent = 'รหัสผ่านต้องมีความยาวอย่างน้อย 12 ตัวอักษร'; 
                 return;
             }
-            // *** END การแก้ไขล่าสุด ***
 
             if (password !== confirmPassword) {
                 errorMessage.textContent = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
@@ -679,7 +729,6 @@ async function handleAuth() {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
-            // ใช้ Email เป็น Doc ID ใน Firestore
             await db.collection(HOO_HEY_HOW_COLLECTION).doc(email).set({
                 email: email, 
                 displayName: gameUsername, 
@@ -725,7 +774,6 @@ function openLineOAPopup() {
     const left = (screen.width / 2) - (width / 2);
     const top = (screen.height / 2) - (height / 2);
 
-    // เปิดใน Pop-up/แท็บใหม่ โดยไม่รบกวนหน้าต่างหลัก
     window.open(
         lineOALink, 
         '_blank', 
@@ -733,7 +781,6 @@ function openLineOAPopup() {
     );
 }
 
-// *** การแก้ไข: เพิ่ม History State เพื่อจัดการปุ่มย้อนกลับ (Back Button) ***
 async function loginSuccess(email, uid) {
     currentEmail = email;
     
@@ -741,7 +788,6 @@ async function loginSuccess(email, uid) {
     document.getElementById('admin-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
     
-    // ตั้ง History State เพื่อให้เมื่อผู้เล่นกด Back Button ยังคงอยู่หน้าเกม
     history.pushState({ screen: 'game' }, '', window.location.pathname);
     
     const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
@@ -804,7 +850,6 @@ function adminLoginSuccess() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'block';
-    // ตั้ง History State เพื่อให้เมื่อผู้เล่นกด Back Button ยังคงอยู่หน้า Admin
     history.pushState({ screen: 'admin' }, '', window.location.pathname);
     renderUserList(); 
 }
@@ -1142,32 +1187,18 @@ document.getElementById('roll').addEventListener('click', async () => {
 // 🎯🎯🎯 8. การบังคับล็อกอินอัตโนมัติทันทีเมื่อโหลดหน้า (Auto Login) 🎯🎯🎯
 // -----------------------------------------------------
 
-// NEW: เพิ่ม Listener สำหรับ Back Button เพื่อให้ทำงานร่วมกับ history.pushState
-window.addEventListener('popstate', (event) => {
-    // ถ้าสถานะเป็น 'game' หรือ 'admin' ให้อยู่หน้านั้น
-    if (event.state && (event.state.screen === 'game' || event.state.screen === 'admin')) {
-        // ไม่ต้องทำอะไร เพราะ onAuthStateChanged จะจัดการอยู่แล้ว
-    } else {
-        // ถ้าสถานะไม่ใช่เกม/แอดมิน (เช่น เข้ามาครั้งแรก) ให้แสดงหน้าล็อกอิน
-        document.getElementById('auth-screen').style.display = 'block';
-        document.getElementById('game-screen').style.display = 'none';
-        document.getElementById('admin-screen').style.display = 'none';
-    }
-});
-
-
-async function autoLoginOnLoad() {
+// *** NEW: เปลี่ยนชื่อฟังก์ชันเป็น checkAuthStateAndRoute ***
+async function checkAuthStateAndRoute() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'none';
     
-    // ตรวจสอบ Admin Login (หากมีการใส่ข้อมูลใน Input)
+    // ตรวจสอบ Admin Login (Hardcoded check)
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const adminEmailCheck = emailInput ? emailInput.value.trim() : null;
     const adminPassCheck = passwordInput ? passwordInput.value : null;
 
-    // *** ตรวจสอบ ADMIN LOGIN (Hardcoded) ด้วยรหัสผ่านใหม่ ***
     if (adminEmailCheck === ADMIN_EMAIL && adminPassCheck === ADMIN_PASS) {
         adminLoginSuccess();
         return;
@@ -1179,7 +1210,6 @@ async function autoLoginOnLoad() {
         if (user) {
             const email = user.email;
             
-            // ตรวจสอบว่าเป็น Admin ที่ล็อกอินผ่าน Firebase Auth (ถ้าคุณยกเลิก Hardcoded ไปแล้ว)
             if (email === ADMIN_EMAIL) { 
                 adminLoginSuccess();
                 return;
@@ -1192,12 +1222,32 @@ async function autoLoginOnLoad() {
         document.getElementById('auth-screen').style.display = 'block';
 
     } catch (error) {
-        console.error("Auto-login failed:", error);
+        console.error("Auth state check failed:", error);
         document.getElementById('auth-screen').style.display = 'block';
     }
 }
 
-document.addEventListener('DOMContentLoaded', autoLoginOnLoad);
+// เพิ่ม Listener สำหรับ Back Button เพื่อให้ทำงานร่วมกับ history.pushState
+window.addEventListener('popstate', (event) => {
+    if (event.state && (event.state.screen === 'game' || event.state.screen === 'admin')) {
+        // Do nothing (stay on current screen as defined by history state)
+    } else {
+        // Fallback to Auth screen
+        checkAuthStateAndRoute();
+    }
+});
+
+// *** NEW: เพิ่ม Listener เมื่อผู้ใช้กลับมาที่หน้าต่าง (Focus) ***
+window.addEventListener('focus', function() {
+    // หน่วงเวลาเล็กน้อยเพื่อให้แน่ใจว่า Firebase ได้เรียกคืนสถานะแล้ว
+    setTimeout(() => {
+        if (auth.currentUser) {
+            checkAuthStateAndRoute();
+        }
+    }, 100); 
+});
+
+document.addEventListener('DOMContentLoaded', checkAuthStateAndRoute);
 
 </script>
 </body>
