@@ -577,9 +577,9 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore(); 
 
-// *** การแก้ไข: เปลี่ยน ADMIN_EMAIL ตามที่คุณต้องการ ***
+// *** อัปเดตล่าสุด: รหัสผ่านแอดมินใหม่ (ปลอดภัยสูง) ***
 const ADMIN_EMAIL = 'admin@gmail.com'; 
-const ADMIN_PASS = '03774570'; 
+const ADMIN_PASS = 'Asura@Ransom4570!'; // <<< รหัสผ่านแอดมินใหม่
 
 let isLoginMode = true;
 const balanceDisplay = document.getElementById('playerBalance');
@@ -634,7 +634,7 @@ async function handleAuth() {
         return;
     }
     
-    // *** การแก้ไข: ตรวจสอบ Admin Login ด้วยอีเมลใหม่ ***
+    // *** การแก้ไข: ตรวจสอบ Admin Login ด้วยอีเมลใหม่และรหัสผ่านใหม่ ***
     if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
         adminLoginSuccess();
         return;
@@ -657,10 +657,14 @@ async function handleAuth() {
                  errorMessage.textContent = 'ชื่อผู้ใช้ในเกมต้องมี 3-20 ตัวอักษร';
                  return;
             }
-            if (password.length < 6) {
-                errorMessage.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+            
+            // *** การแก้ไขล่าสุด: บังคับใช้รหัสผ่าน 12 หลักเพื่อความปลอดภัย ***
+            if (password.length < 12) { 
+                errorMessage.textContent = 'รหัสผ่านต้องมีความยาวอย่างน้อย 12 ตัวอักษร'; 
                 return;
             }
+            // *** END การแก้ไขล่าสุด ***
+
             if (password !== confirmPassword) {
                 errorMessage.textContent = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
                 return;
@@ -695,7 +699,7 @@ async function handleAuth() {
         } else if (error.code === 'auth/email-already-in-use') {
             displayError = '❌ อีเมลนี้มีคนใช้แล้ว! กรุณาลองเข้าสู่ระบบ หรือใช้อีเมลอื่น';
         } else if (error.code === 'auth/weak-password') {
-            displayError = 'รหัสผ่านอ่อนแอเกินไป (ต้องมีอย่างน้อย 6 ตัวอักษร)';
+            displayError = 'รหัสผ่านอ่อนแอเกินไป (ต้องมีอย่างน้อย 12 ตัวอักษร)';
         } else if (error.code === 'auth/operation-not-allowed') {
             displayError = '⚠️ ระบบการลงทะเบียนถูกปิดใช้งาน! กรุณาแจ้งแอดมินให้เปิดใช้งาน "Email/Password" ใน Firebase Console';
         } else if (error.code === 'auth/invalid-email') {
@@ -1163,7 +1167,7 @@ async function autoLoginOnLoad() {
     const adminEmailCheck = emailInput ? emailInput.value.trim() : null;
     const adminPassCheck = passwordInput ? passwordInput.value : null;
 
-    // *** ตรวจสอบ ADMIN LOGIN (Hardcoded) ***
+    // *** ตรวจสอบ ADMIN LOGIN (Hardcoded) ด้วยรหัสผ่านใหม่ ***
     if (adminEmailCheck === ADMIN_EMAIL && adminPassCheck === ADMIN_PASS) {
         adminLoginSuccess();
         return;
