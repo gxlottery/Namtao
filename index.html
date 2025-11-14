@@ -40,7 +40,7 @@
     margin-bottom: 20px;
   }
   
-  /* CSS สำหรับ Modal แจ้งเตือน In-App (NEW) */
+  /* CSS สำหรับ Modal แจ้งเตือน In-App (Initial Warning) */
   #in-app-warning {
     position: fixed;
     top: 0;
@@ -256,6 +256,21 @@
     padding-top: 20px; 
     padding-bottom: 20px;
   }
+
+  /* NEW: คำเตือนในหน้าเกมสำหรับ Line OA/TikTok */
+  .line-warning-banner {
+    background-color: #ffcccc;
+    color: #3f0d12;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px auto 20px auto;
+    font-size: 14px;
+    font-weight: bold;
+    max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 2px solid #ff4136;
+  }
+  
   #balance {
     background: rgba(255,255,255,0.2);
     display: inline-block;
@@ -576,6 +591,12 @@
   <div id="game-screen">
     <h1>🎲 เกมน้ำเต้าปูปลา 🎲</h1>
     
+    <div id="line-oa-game-warning" class="line-warning-banner" style="display: none;">
+        ⚠️ **คำเตือน!** คุณกำลังใช้ Line Browser <br>
+        หากต้องการเล่นอย่างต่อเนื่องโดยไม่หลุด ให้กดปุ่ม **...** หรือ ↗️ ด้านบน <br>
+        แล้วเลือก **"เปิดใน Chrome/Safari"**
+    </div>
+    
     <div class="service-buttons">
         <button onclick="openLineOAPopup()" class="service-btn service-line-btn">
             💸 เติมเงิน/ถอนเงิน (Line OA)
@@ -845,7 +866,7 @@ async function handleAuth(event) {
 }
 
 // ===============================================
-// 4. Game Logic Handlers
+// 4. User Experience Handlers
 // ===============================================
 
 function openLineOAPopup() {
@@ -871,6 +892,13 @@ async function loginSuccess(email, uid) {
     document.getElementById('game-screen').style.display = 'block';
     
     history.pushState({ screen: 'game' }, '', window.location.pathname);
+    
+    // *** NEW: ตรวจสอบและแสดงคำเตือน Line OA/TikTok ซ้ำที่หน้าเกม ***
+    if (detectInAppBrowser()) {
+        document.getElementById('line-oa-game-warning').style.display = 'block';
+    } else {
+        document.getElementById('line-oa-game-warning').style.display = 'none';
+    }
     
     const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
 
@@ -1281,7 +1309,7 @@ function detectInAppBrowser() {
     return isLine || isTikTok || isFacebook; 
 }
 
-// *** NEW: ฟังก์ชันแสดงคำเตือน ***
+// *** NEW: ฟังก์ชันแสดงคำเตือน (Modal) ***
 function showInAppWarning() {
     if (detectInAppBrowser()) {
         document.getElementById('in-app-warning').style.display = 'flex';
@@ -1338,7 +1366,7 @@ window.addEventListener('popstate', (event) => {
     }
 });
 
-// *** แก้ไข: Listener สำหรับ window.focus เพื่อแก้ปัญหา Line OA Logout ***
+// *** แก้ไข: Listener สำหรับ window.focus เพื่อแก้ปัญหา Line OA Logout (พยายามช่วย) ***
 window.addEventListener('focus', function() {
     // ตรวจสอบสถานะการล็อกอินทันทีที่หน้าต่างได้รับโฟกัส
     if (auth.currentUser) {
