@@ -41,6 +41,46 @@
     margin-bottom: 20px;
   }
   
+  /* CSS สำหรับ Modal แจ้งเตือน In-App (Initial Warning) */
+  #in-app-warning {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95);
+    color: white;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  #in-app-warning-content {
+    background: #333;
+    padding: 30px;
+    border-radius: 15px;
+    border: 3px solid gold;
+    max-width: 400px;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+  }
+  #in-app-warning h3 {
+    color: gold;
+    margin-top: 0;
+  }
+  .close-warning-btn {
+    background: #FF4136;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-weight: bold;
+  }
+  
   /* CSS สำหรับส่วน Login/Sign-Up */
   .auth-container {
     background: rgba(0, 0, 0, 0.5);
@@ -220,6 +260,20 @@
     flex-direction: column; 
     justify-content: space-between; /* กระจายองค์ประกอบให้เต็มพื้นที่แนวตั้ง */
   }
+
+  /* NEW: คำเตือนในหน้าเกมสำหรับ Line OA/TikTok */
+  .line-warning-banner {
+    background-color: #ffcccc;
+    color: #3f0d12;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px auto 10px auto; /* ลด Margin */
+    font-size: 14px;
+    font-weight: bold;
+    max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 2px solid #ff4136;
+  }
   
   #balance {
     background: rgba(255,255,255,0.2);
@@ -363,6 +417,15 @@
 </head>
 <body>
     
+  <div id="in-app-warning" style="display: none;">
+      <div id="in-app-warning-content">
+          <h3>🚨 คำเตือนสำคัญ: การเข้าสู่ระบบไม่เสถียร 🚨</h3>
+          <p>เนื่องจากคุณกำลังเปิดผ่านเบราว์เซอร์ภายในแอป (Line/TikTok) อาจทำให้คุณต้องล็อกอินซ้ำบ่อยครั้ง</p>
+          <p><strong>โปรดกดปุ่มจุดสามจุด (...) หรือไอคอนลูกศรชี้ออก ↗️ ที่มุมด้านบน เพื่อเปิดเว็บไซต์นี้ในเบราว์เซอร์ Chrome หรือ Safari โดยตรง</strong></p>
+          <button class="close-warning-btn" onclick="document.getElementById('in-app-warning').style.display = 'none';">ฉันเข้าใจแล้ว (ดำเนินการต่อ)</button>
+      </div>
+  </div>
+
   <div id="auth-screen" style="display:none;">
     <h1>เข้าสู่ระบบ / สมัครสมาชิก 🎯</h1>
     
@@ -418,6 +481,12 @@
   
   <div id="game-screen">
     <h1>🎲 เกมน้ำเต้าปูปลา 🎲</h1>
+    
+    <div id="line-oa-game-warning" class="line-warning-banner" style="display: none;">
+        ⚠️ **คำเตือน!** คุณกำลังใช้ Line Browser <br>
+        หากต้องการเล่นอย่างต่อเนื่องโดยไม่หลุด ให้กดปุ่ม **...** หรือ ↗️ ด้านบน <br>
+        แล้วเลือก **"เปิดใน Chrome/Safari"**
+    </div>
     
     <div class="service-buttons">
         <button onclick="openLineOAPopup()" class="service-btn service-line-btn">
@@ -504,7 +573,7 @@ const auth = firebase.auth();
 const db = firebase.firestore(); 
 
 const ADMIN_EMAIL = 'admin@gmail.com'; 
-const ADMIN_PASS = 'Asura@Ransom4570!'; 
+const ADMIN_PASS = 'Asura@Ransom4570!'; // รหัสผ่านแอดมินใหม่
 
 let isLoginMode = true;
 const balanceDisplay = document.getElementById('playerBalance');
@@ -715,7 +784,12 @@ async function loginSuccess(email, uid) {
     
     history.pushState({ screen: 'game' }, '', window.location.pathname);
     
-    // *** NEW: ลบการตรวจสอบ Line OA/TikTok ในหน้านี้แล้ว ***
+    // *** NEW: ตรวจสอบและแสดงคำเตือน Line OA/TikTok ซ้ำที่หน้าเกม ***
+    if (detectInAppBrowser()) {
+        document.getElementById('line-oa-game-warning').style.display = 'block';
+    } else {
+        document.getElementById('line-oa-game-warning').style.display = 'none';
+    }
     
     const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
 
@@ -1114,6 +1188,26 @@ document.getElementById('roll').addEventListener('click', async () => {
 // 🎯🎯🎯 8. การบังคับล็อกอินอัตโนมัติทันทีเมื่อโหลดหน้า (Auto Login) 🎯🎯🎯
 // -----------------------------------------------------
 
+// *** NEW: ฟังก์ชันตรวจจับ Line OA/TikTok ***
+function detectInAppBrowser() {
+    const ua = navigator.userAgent.toLowerCase();
+    
+    // ตรวจสอบ Line/TikTok/Facebook
+    const isLine = ua.includes('line');
+    const isTikTok = ua.includes('tiktok'); 
+    const isFacebook = ua.includes('fbav');
+    
+    return isLine || isTikTok || isFacebook; 
+}
+
+// *** NEW: ฟังก์ชันแสดงคำเตือน (Modal) ***
+function showInAppWarning() {
+    if (detectInAppBrowser()) {
+        document.getElementById('in-app-warning').style.display = 'flex';
+    }
+}
+
+
 async function checkAuthStateAndRoute() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
@@ -1153,7 +1247,7 @@ async function checkAuthStateAndRoute() {
     }
 }
 
-// เพิ่ม Listener สำหรับ Back Button
+// เพิ่ม Listener สำหรับ Back Button เพื่อให้ทำงานร่วมกับ history.pushState
 window.addEventListener('popstate', (event) => {
     if (event.state && (event.state.screen === 'game' || event.state.screen === 'admin')) {
         // Do nothing 
@@ -1163,7 +1257,7 @@ window.addEventListener('popstate', (event) => {
     }
 });
 
-// Listener สำหรับ window.focus เพื่อช่วยแก้ไขปัญหา Line OA/In-App Logout
+// *** แก้ไข: Listener สำหรับ window.focus เพื่อแก้ปัญหา Line OA Logout (พยายามช่วย) ***
 window.addEventListener('focus', function() {
     // ตรวจสอบสถานะการล็อกอินทันทีที่หน้าต่างได้รับโฟกัส
     if (auth.currentUser) {
@@ -1171,8 +1265,9 @@ window.addEventListener('focus', function() {
     }
 });
 
-// เรียกใช้ Auth Check เมื่อโหลดหน้าจอเสร็จแล้ว
+// *** แก้ไข: เรียกใช้ทั้ง In-App Warning และ Auth Check เมื่อโหลดหน้าจอเสร็จแล้ว ***
 document.addEventListener('DOMContentLoaded', () => {
+    showInAppWarning(); 
     checkAuthStateAndRoute(); 
 });
 
