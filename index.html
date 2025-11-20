@@ -704,6 +704,11 @@ async function handleAuth(event) {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
+            // *** โค้ดที่แก้ไข: เพิ่มการหน่วงเวลาเพื่อแก้ปัญหา Permissions ***
+            // หน่วงเวลา 300 มิลลิวินาที เพื่อให้ Auth Token พร้อมใช้สำหรับการเขียน Firestore
+            await new Promise(resolve => setTimeout(resolve, 300)); 
+            // *************************************************************
+
             await db.collection(HOO_HEY_HOW_COLLECTION).doc(email).set({
                 email: email, 
                 displayName: gameUsername, 
@@ -731,6 +736,9 @@ async function handleAuth(event) {
             displayError = '⚠️ ระบบการลงทะเบียนถูกปิดใช้งาน! กรุณาแจ้งแอดมินให้เปิดใช้งาน "Email/Password" ใน Firebase Console';
         } else if (error.code === 'auth/invalid-email') {
              displayError = 'รูปแบบอีเมลไม่ถูกต้อง';
+        } else if (error.message.includes('permission')) {
+             // หากเกิด Error "Missing or insufficient permissions" ในขั้นตอน Set
+             displayError = '❌ ข้อผิดพลาดสิทธิ์: โปรดตรวจสอบว่าคุณได้กด "Publish" กฎ Firestore Rules ที่ถูกต้องแล้ว';
         } else {
             displayError = `เกิดข้อผิดพลาด: ${error.message}`; 
         }
@@ -1166,7 +1174,7 @@ document.getElementById('roll').addEventListener('click', async () => {
 
 
 // -----------------------------------------------------
-// 🎯🎯🎯 8. การบังคับล็อกอินอัตโนมัติทันทีเมื่อโหลดหน้า (Auto Login) 🎯🎯🎯
+// 🎯🎯🎯 8. การบังคับล็อคอินอัตโนมัติทันทีเมื่อโหลดหน้า (Auto Login) 🎯🎯🎯
 // -----------------------------------------------------
 
 async function checkAuthStateAndRoute() {
