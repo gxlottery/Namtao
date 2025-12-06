@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -306,6 +307,13 @@
     cursor: pointer;
     box-sizing: border-box;
   }
+  
+  /* *** CSS ที่เพิ่มเข้ามา: สำหรับรูปภาพในปุ่มเดิมพันสัตว์ *** */
+  .bet-btn-single img {
+      width: 50px; /* กำหนดขนาดรูปภาพตามที่ร้องขอ */
+      height: 50px;
+      object-fit: contain; /* ป้องกันรูปภาพเสียสัดส่วน */
+  }
   /* ************************************************* */
 
   
@@ -347,6 +355,51 @@
 
 
   .bet-control { margin-bottom: 15px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
+  
+  /* *** CSS ที่เพิ่มเข้ามา: สำหรับปุ่มจำนวนเงินแทน Input *** */
+  .amount-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: center;
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto 10px auto;
+  }
+
+  .amount-btn-select {
+      flex-basis: 30%; /* จัดให้มี 3 ปุ่มต่อแถว */
+      padding: 10px 5px;
+      background: linear-gradient(to right, #007bff, #0056b3);
+      color: white;
+      border: 1px solid #0056b3;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+      font-size: 14px;
+  }
+
+  .amount-btn-select.active {
+      background: linear-gradient(to right, #28a745, #1e7e34);
+      border: 2px solid gold;
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+  }
+  
+  .bet-control label {
+      margin-right: 0;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 5px;
+  }
+  
+  /* ซ่อน Input เดิม และปุ่มเดิมพันสูงสุด เพราะเปลี่ยนเป็นปุ่มเลือกจำนวนเงินแล้ว */
+  .bet-input-group {
+      display: none; 
+  }
+  
+  /* ************************************************* */
   
   button#roll {
     /* ใช้ margin-top: auto; ใน #game-screen (Flexbox) เพื่อดันปุ่มลงด้านล่าง */
@@ -391,7 +444,18 @@
         height: 50px; /* เล็กลงสำหรับมือถือ */
         border-radius: 10px;
     }
+    .bet-btn-single img { /* ปรับขนาดรูปภาพในมือถือ */
+        width: 40px; 
+        height: 40px;
+    }
     /* **************************************** */
+    .amount-btn-select {
+        font-size: 12px;
+        padding: 8px 3px;
+    }
+    .amount-buttons {
+        max-width: 300px;
+    }
 
     .betting-area { margin: 5px auto; } 
 
@@ -404,8 +468,6 @@
       margin-bottom: 8px;
     }
     .bet-control label { font-size: 14px; }
-    #betAmount { width: 100px; padding: 8px; font-size: 16px; }
-    .bet-input-group .bet-btn { padding: 6px 8px; font-size: 12px; }
     
     button#roll { padding: 10px 20px; font-size: 16px; }
     .dice { font-size: 40px; margin: 5px 0; } 
@@ -427,11 +489,10 @@
       <h2 id="auth-title">เข้าสู่ระบบ</h2>
       
       <div class="input-wrapper">
-          <input type="email" id="email" placeholder="อีเมล (Email)" required>
+          <input type="tel" id="phone" placeholder="เบอร์โทรศัพท์" required>
       </div>
-
       <div class="input-wrapper">
-          <input type="password" id="password" placeholder="รหัสผ่าน (Password)" required>
+          <input type="password" id="password" placeholder="รหัสผ่านที่คุณกำหนดเอง" required>
           <span class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁️</span>
       </div>
       
@@ -491,13 +552,25 @@
     <div class="betting-area">
         <p>แทงเดี่ยว (จ่าย 1-3 เท่า):</p>
         <div class="single-bets">
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="น้ำเต้า"><span>🍐</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ปู"><span>🦀</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ปลา"><span>🐟</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="เสือ"><span>🐯</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ไก่"><span>🐔</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="กุ้ง"><span>🦐</span></button>
-        </div>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="น้ำเต้า">
+                <img src="images/gourd.png" alt="น้ำเต้า">
+            </button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ปู">
+                <img src="images/crab.png" alt="ปู">
+            </button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ปลา">
+                <img src="images/fish.png" alt="ปลา">
+            </button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="เสือ">
+                <img src="images/tiger_face.png" alt="เสือ">
+            </button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ไก่">
+                <img src="images/chicken.png" alt="ไก่">
+            </button>
+            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="กุ้ง">
+                <img src="images/shrimp.png" alt="กุ้ง">
+            </button>
+            </div>
 
         <p>แทงรวม (สูง/ต่ำ, ตอง):</p>
         <div class="compound-bets">
@@ -514,13 +587,19 @@
     </div>
 
     <div class="bet-control">
-      <label for="betAmount">จำนวนเงินเดิมพัน (ต่อการเลือก):</label>
+      <label>เลือกจำนวนเงินเดิมพัน (ต่อการเลือก):</label>
       
       <div class="bet-input-group">
-          <button class="bet-btn" onclick="setMaxBet()">เดิมพันสูงสุด</button>
-          <input type="number" id="betAmount" value="10" min="0" max="1000">
+          </div>
+      <div class="amount-buttons" id="amount-buttons">
+          <button class="amount-btn-select" data-amount="10">10</button>
+          <button class="amount-btn-select" data-amount="20">20</button>
+          <button class="amount-btn-select" data-amount="50">50</button>
+          <button class="amount-btn-select" data-amount="100">100</button>
+          <button class="amount-btn-select" data-amount="300">300</button>
+          <button class="amount-btn-select" data-amount="500">500</button>
+          <button class="amount-btn-select" data-amount="1000">1,000</button>
       </div>
-      
       <div id="totalBetDisplay" style="width: 100%; margin-top: 5px; font-weight: bold; color: #33ff33; font-size: 18px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 10px;">
           ยอดเดิมพันรวม: <span>0</span> บาท
       </div>
@@ -565,9 +644,14 @@ const ADMIN_PASS = 'Asura@Ransom4570!';
 
 let isLoginMode = true;
 const balanceDisplay = document.getElementById('playerBalance');
-const betInput = document.getElementById('betAmount'); 
+// *** แก้ไข: ลบ betInput ออก และใช้ตัวแปรใหม่แทน ***
+// const betInput = document.getElementById('betAmount'); 
+let selectedBetAmount = 10; // กำหนดค่าเริ่มต้นเป็น 10
+// ************************************************
 let balance = 0;
-let currentEmail = null; 
+// *** แก้ไข: เปลี่ยนจาก currentEmail เป็น currentPhone เพื่อใช้เป็น Firestore Doc ID ***
+let currentPhone = null; 
+// ************************************************
 let currentDisplayName = null; 
 
 const minBet = 10;
@@ -596,7 +680,9 @@ function toggleAuthMode() {
         : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบที่นี่';
         
     // เคลียร์ค่าใน Input เมื่อสลับโหมด
-    document.getElementById('email').value = ''; 
+    // *** แก้ไข: เปลี่ยนจาก email เป็น phone ***
+    document.getElementById('phone').value = ''; 
+    // ****************************************
     document.getElementById('password').value = '';
     if (document.getElementById('confirmPassword')) {
          document.getElementById('confirmPassword').value = '';
@@ -627,7 +713,9 @@ async function handleAuth(event) {
         event.preventDefault(); 
     }
 
-    const email = document.getElementById('email').value.trim();
+    // *** แก้ไข: เปลี่ยนจาก email เป็น phone ***
+    const phone = document.getElementById('phone').value.trim();
+    // ****************************************
     const password = document.getElementById('password').value;
     const errorMessage = document.getElementById('error-message');
     errorMessage.textContent = ''; 
@@ -637,13 +725,24 @@ async function handleAuth(event) {
     authButton.textContent = 'กำลังดำเนินการ...';
     authButton.disabled = true;
 
+    // *** แก้ไข: ตรวจสอบ Phone/Email Validation ***
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        errorMessage.textContent = '❌ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (ห้ามมีช่องว่างนำหน้า/ตามหลัง)';
+    // ใช้ Phone เป็น User ID ใน Firestore แต่ต้องใช้ email สำหรับ Firebase Auth
+    const authEmail = isLoginMode ? phone + "@phone.com" : phone + "@phone.com"; 
+
+    // ตรวจสอบเบอร์โทร: ต้องเป็นตัวเลขเท่านั้น
+    if (!/^\d+$/.test(phone)) {
+        errorMessage.textContent = '❌ รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง (ต้องเป็นตัวเลขเท่านั้น)';
+    }
+
+    if (!phone || !password) {
+        errorMessage.textContent = 'กรุณากรอกเบอร์โทรศัพท์และรหัสผ่านให้ครบถ้วน';
     }
     
-    if (!email || !password) {
-        errorMessage.textContent = 'กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน';
+    // Admin Login ยังใช้ Email/Pass เดิม (สำหรับ Hardcoded Admin)
+    if (phone === ADMIN_EMAIL && password === ADMIN_PASS) {
+        adminLoginSuccess();
+        return;
     }
     
     if (errorMessage.textContent !== '') {
@@ -652,24 +751,19 @@ async function handleAuth(event) {
         return;
     }
     
-    // ตรวจสอบ Admin Login (Hardcoded)
-    if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
-        adminLoginSuccess();
-        return;
-    }
-
     try {
         await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         if (isLoginMode) {
-            // *** แก้ไข: ล็อกอิน และเรียก checkAuthStateAndRoute() แทน reload ***
-            await auth.signInWithEmailAndPassword(email, password);
+            // *** แก้ไข: ใช้ authEmail สำหรับ Firebase Auth ***
+            await auth.signInWithEmailAndPassword(authEmail, password);
             
             // ล้างช่องกรอกหลังจากเข้าสู่ระบบสำเร็จ
-            document.getElementById('email').value = '';
+            document.getElementById('phone').value = '';
             document.getElementById('password').value = '';
             
-            checkAuthStateAndRoute(); 
+            // ใช้ phone number เป็น ID สำหรับ loginSuccess
+            loginSuccess(phone, auth.currentUser.uid); 
         } else {
             // SIGN UP Logic (with 12-char password check)
             const confirmPassword = document.getElementById('confirmPassword').value;
@@ -687,21 +781,26 @@ async function handleAuth(event) {
                 errorMessage.textContent = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
             }
             
+            // *** แก้ไข: ตรวจสอบว่าเบอร์โทรศัพท์นี้ถูกใช้แล้วหรือยัง (ใน Firestore) ***
+            const existingUserPhone = await db.collection(HOO_HEY_HOW_COLLECTION).doc(phone).get();
+            if (existingUserPhone.exists) {
+                errorMessage.textContent = '❌ เบอร์โทรศัพท์นี้ถูกใช้ลงทะเบียนแล้ว! กรุณาเข้าสู่ระบบ หรือใช้เบอร์อื่น';
+            }
+            // *************************************************************************
+            
+            const existingUsernames = await db.collection(HOO_HEY_HOW_COLLECTION).where('displayName', '==', gameUsername).get();
+            if (!existingUsernames.empty) {
+                errorMessage.textContent = '❌ ชื่อผู้ใช้นี้มีคนใช้แสดงในเกมแล้ว! กรุณาเลือกชื่ออื่น';
+            }
+            
             if (errorMessage.textContent !== '') {
                  authButton.textContent = 'สมัครสมาชิก';
                  authButton.disabled = false;
                  return;
             }
 
-            const existingUsernames = await db.collection(HOO_HEY_HOW_COLLECTION).where('displayName', '==', gameUsername).get();
-            if (!existingUsernames.empty) {
-                errorMessage.textContent = '❌ ชื่อผู้ใช้นี้มีคนใช้แสดงในเกมแล้ว! กรุณาเลือกชื่ออื่น';
-                authButton.textContent = 'สมัครสมาชิก';
-                authButton.disabled = false;
-                return;
-            }
-            
-            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            // *** แก้ไข: ใช้ authEmail สำหรับ Firebase Auth ***
+            const userCredential = await auth.createUserWithEmailAndPassword(authEmail, password);
             const user = userCredential.user;
 
             // *** โค้ดที่แก้ไข: เพิ่มการหน่วงเวลาเพื่อแก้ปัญหา Permissions ***
@@ -709,13 +808,15 @@ async function handleAuth(event) {
             await new Promise(resolve => setTimeout(resolve, 300)); 
             // *************************************************************
 
-            await db.collection(HOO_HEY_HOW_COLLECTION).doc(email).set({
-                email: email, 
+            // *** แก้ไข: ใช้ phone เป็น Doc ID ใน Firestore ***
+            await db.collection(HOO_HEY_HOW_COLLECTION).doc(phone).set({
+                phone: phone, 
                 displayName: gameUsername, 
                 balance: 0,
                 uid: user.uid 
             });
-            
+            // *************************************************
+
             alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบอีกครั้ง'); 
             toggleAuthMode();
         }
@@ -727,15 +828,15 @@ async function handleAuth(event) {
         let displayError = 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาติดต่อแอดมิน';
 
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            displayError = '❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
+            displayError = '❌ เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
         } else if (error.code === 'auth/email-already-in-use') {
-            displayError = '❌ อีเมลนี้มีคนใช้แล้ว! กรุณาลองเข้าสู่ระบบ หรือใช้อีเมลอื่น';
+            displayError = '❌ เบอร์โทรศัพท์นี้มีคนใช้แล้ว! กรุณาลองเข้าสู่ระบบ หรือใช้เบอร์อื่น';
         } else if (error.code === 'auth/weak-password') {
             displayError = 'รหัสผ่านอ่อนแอเกินไป (ต้องมีอย่างน้อย 12 ตัวอักษร)';
         } else if (error.code === 'auth/operation-not-allowed') {
             displayError = '⚠️ ระบบการลงทะเบียนถูกปิดใช้งาน! กรุณาแจ้งแอดมินให้เปิดใช้งาน "Email/Password" ใน Firebase Console';
         } else if (error.code === 'auth/invalid-email') {
-             displayError = 'รูปแบบอีเมลไม่ถูกต้อง';
+             displayError = 'รูปแบบเบอร์โทรศัพท์ที่ใช้ในการลงทะเบียนไม่ถูกต้อง';
         } else if (error.message.includes('permission')) {
              // หากเกิด Error "Missing or insufficient permissions" ในขั้นตอน Set
              displayError = '❌ ข้อผิดพลาดสิทธิ์: โปรดตรวจสอบว่าคุณได้กด "Publish" กฎ Firestore Rules ที่ถูกต้องแล้ว';
@@ -771,8 +872,9 @@ function openLineOAPopup() {
     );
 }
 
-async function loginSuccess(email, uid) {
-    currentEmail = email;
+// *** แก้ไข: เปลี่ยนจาก email เป็น phone ***
+async function loginSuccess(phone, uid) {
+    currentPhone = phone;
     
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
@@ -780,16 +882,20 @@ async function loginSuccess(email, uid) {
     
     history.pushState({ screen: 'game' }, '', window.location.pathname);
     
-    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
+    // *** แก้ไข: ใช้ phone เป็น Doc ID ***
+    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(phone);
+    // ************************************
 
     userRef.onSnapshot(doc => {
+        // *** แก้ไข: เปลี่ยนจาก email เป็น phone ***
         if (doc.exists) {
-            currentDisplayName = doc.data().displayName || email; 
+            currentDisplayName = doc.data().displayName || phone; 
             balance = doc.data().balance; 
         } else {
             balance = 0; 
-            currentDisplayName = email;
+            currentDisplayName = phone;
         }
+        // ************************************
         
         document.getElementById('usernameDisplay').textContent = `ยอดเงิน ${currentDisplayName}:`; 
         balanceDisplay.textContent = balance;
@@ -803,6 +909,7 @@ async function loginSuccess(email, uid) {
         document.getElementById('result').textContent = '⚠️ ข้อผิดพลาด: ไม่สามารถอัปเดตยอดเงินได้แบบ Real-time';
     });
 }
+// ****************************************
 
 function forceRefresh() {
     document.getElementById('result').textContent = 'กำลังรีเฟรชข้อมูล (ระบบจะโหลดหน้าจอใหม่)...';
@@ -812,11 +919,7 @@ function forceRefresh() {
 }
 
 function updateBetControls() {
-    let defaultBet = Math.min(balance > 0 ? 10 : 0, balance);
-    betInput.value = defaultBet;
-    betInput.min = balance > 0 ? minBet : 0;
-    betInput.max = Math.min(balance, maxBetDefault);
-
+    // *** แก้ไข: ลบการกำหนดค่า min/max ให้กับ input ที่ถูกลบออกไปแล้ว ***
     const rollButton = document.getElementById('roll');
     if (balance === 0) {
         rollButton.disabled = true;
@@ -825,6 +928,51 @@ function updateBetControls() {
         rollButton.disabled = false;
         rollButton.textContent = 'หมุนลูกเต๋า';
     }
+    
+    // *** เพิ่ม: อัปเดตสถานะปุ่มจำนวนเงิน ***
+    const amountButtons = document.querySelectorAll('.amount-btn-select');
+    let hasDefaultActive = false;
+    
+    amountButtons.forEach(btn => {
+        const amount = parseInt(btn.dataset.amount);
+        btn.classList.remove('active');
+        
+        // กำหนดปุ่มที่ถูกเลือกปัจจุบันให้เป็น active (ถ้ามีเงินพอ)
+        if (amount === selectedBetAmount) {
+            if (selectedBetAmount <= balance) {
+                 btn.classList.add('active');
+                 hasDefaultActive = true;
+            } else {
+                 // ถ้าเงินไม่พอสำหรับปุ่มที่เคยเลือก ให้รีเซ็ตเป็นค่าต่ำสุด
+                 selectedBetAmount = minBet; 
+            }
+        }
+        
+        // ปิดปุ่มที่มีมูลค่าสูงกว่ายอดเงินทั้งหมดของผู้เล่น
+        btn.disabled = amount > balance; 
+    });
+    
+    // หากปุ่มที่เคยเลือกใช้งานไม่ได้ ให้หาปุ่มที่ใช้งานได้และเลือกใหม่
+    if (!hasDefaultActive && balance >= minBet) {
+        let bestFit = 0;
+        amountButtons.forEach(btn => {
+             const amount = parseInt(btn.dataset.amount);
+             if (amount <= balance) {
+                 bestFit = Math.max(bestFit, amount);
+             }
+        });
+        
+        selectedBetAmount = bestFit > 0 ? bestFit : minBet;
+        
+        amountButtons.forEach(btn => {
+             if (parseInt(btn.dataset.amount) === selectedBetAmount) {
+                 btn.classList.add('active');
+             }
+        });
+    } else if (balance < minBet) {
+        selectedBetAmount = 0;
+    }
+    // *********************************************
 }
 
 function logout() {
@@ -857,23 +1005,29 @@ async function renderUserList() {
         
         let userCount = 0;
         snapshot.forEach(doc => {
-            const email = doc.id; 
+            // *** แก้ไข: ใช้ ID (เบอร์โทร) เป็นตัวหลัก และแสดง phone/email ถ้ามี ***
+            const userId = doc.id; 
             const user = doc.data();
-            const displayName = user.displayName || email; 
-            
+            const displayName = user.displayName || userId; 
+            const contactInfo = user.phone ? `เบอร์โทร: <strong>${user.phone}</strong>` : `อีเมล: <strong>${user.email}</strong>`; // แสดงตามข้อมูลที่มี
+
             const listItem = document.createElement('li');
+            // *** แก้ไข: ใช้ userId สำหรับ ID ของ Input/Button (เพื่อให้ครอบคลุมทั้ง email และ phone) ***
+            const safeId = userId.replace(/[^a-zA-Z0-9]/g, '_');
+
             listItem.innerHTML = `
                 <span class="user-info">ชื่อเกม: <strong>${displayName}</strong></span> 
-                <span class="user-info">อีเมล: <strong>${email}</strong></span> 
+                <span class="user-info">${contactInfo}</span> 
                 <span class="user-balance">ยอดเงิน: ${user.balance} บาท</span>
                 <div class="admin-controls">
-                    <input type="number" id="amount-${email.replace(/[^a-zA-Z0-9]/g, '_')}" placeholder="จำนวนเงิน">
-                    <button class="deposit-btn-admin" onclick="updateUserBalance('${email}')">+ เติมเงิน</button>
-                    <button class="withdraw-btn-admin" onclick="updateUserBalance('${email}', false)">- ถอนเงิน</button>
+                    <input type="number" id="amount-${safeId}" placeholder="จำนวนเงิน">
+                    <button class="deposit-btn-admin" onclick="updateUserBalance('${userId}')">+ เติมเงิน</button>
+                    <button class="withdraw-btn-admin" onclick="updateUserBalance('${userId}', false)">- ถอนเงิน</button>
                 </div>
             `;
             userListElement.appendChild(listItem);
             userCount++;
+            // ********************************************************************************************
         });
 
         if (userCount === 0) {
@@ -886,8 +1040,9 @@ async function renderUserList() {
     }
 }
 
-async function updateUserBalance(email, isDeposit = true) {
-    const safeId = email.replace(/[^a-zA-Z0-9]/g, '_');
+// *** แก้ไข: ใช้ userId (phone/email) เป็น Doc ID ***
+async function updateUserBalance(userId, isDeposit = true) {
+    const safeId = userId.replace(/[^a-zA-Z0-9]/g, '_');
     const amountInput = document.getElementById(`amount-${safeId}`);
     const amount = parseInt(amountInput.value);
 
@@ -896,7 +1051,7 @@ async function updateUserBalance(email, isDeposit = true) {
         return;
     }
     
-    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(email);
+    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(userId);
 
     try {
         await db.runTransaction(async (transaction) => {
@@ -907,7 +1062,7 @@ async function updateUserBalance(email, isDeposit = true) {
             
             let currentBalance = doc.data().balance;
             let newBalance;
-            const displayName = doc.data().displayName || email;
+            const displayName = doc.data().displayName || userId;
 
             if (isDeposit) {
                 newBalance = currentBalance + amount;
@@ -940,10 +1095,12 @@ async function updateUserBalance(email, isDeposit = true) {
     }
 }
 
-async function getUserBalance(email) {
-    const doc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(email).get();
+// *** แก้ไข: ใช้ userId (phone/email) เป็น Doc ID ***
+async function getUserBalance(userId) {
+    const doc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(userId).get();
     return doc.exists ? doc.data().balance : 0;
 }
+// **************************************************
 
 
 // ===============================================
@@ -951,7 +1108,9 @@ async function getUserBalance(email) {
 // ===============================================
 
 const animals = ['น้ำเต้า','ปู','ปลา','เสือ','ไก่','กุ้ง'];
-const emojis = ['🍐','🦀','🐟','🐯','🐔','🦐'];
+// *** แก้ไข: เปลี่ยน Emojis เป็นชื่อไฟล์รูปภาพ (เพื่อใช้สำหรับ Dice Area) ***
+const diceImages = ['<img src="images/gourd.png" style="width: 50px; height: 50px;">','<img src="images/crab.png" style="width: 50px; height: 50px;">','<img src="images/fish.png" style="width: 50px; height: 50px;">','<img src="images/tiger_face.png" style="width: 50px; height: 50px;">','<img src="images/chicken.png" style="width: 50px; height: 50px;">','<img src="images/shrimp.png" style="width: 50px; height: 50px;">'];
+// *************************************************************************
 const animalValues = { 'น้ำเต้า': 1, 'ปู': 2, 'ปลา': 3, 'เสือ': 4, 'ไก่': 5, 'กุ้ง': 6 };
 
 const activeBets = new Map(); 
@@ -963,7 +1122,9 @@ const winSound = document.getElementById('winSound');
 
 
 function updateTotalCostDisplay() {
-    const amountPerBet = parseInt(betInput.value) || 0;
+    // *** แก้ไข: ใช้ selectedBetAmount แทน input value ***
+    const amountPerBet = selectedBetAmount;
+    // *************************************************
     const totalCost = amountPerBet * activeBets.size;
     document.querySelector('#totalBetDisplay span').textContent = totalCost.toLocaleString();
     
@@ -975,15 +1136,42 @@ function updateTotalCostDisplay() {
         rollButton.disabled = false;
         rollButton.textContent = 'หมุนลูกเต๋า';
     }
+    
+    // *** เพิ่ม: อัปเดตสถานะปุ่มจำนวนเงินเมื่อมีการเลือกการเดิมพัน ***
+    updateBetControls(); 
+    // ************************************************************
 }
 
-function setMaxBet() {
-    let max = Math.min(balance, maxBetDefault);
-    betInput.value = max;
-    updateTotalCostDisplay(); 
-}
+// *** ลบ setMaxBet() ออกตามคำขอ เนื่องจากไม่มี input แล้ว ***
+// function setMaxBet() {
+//     let max = Math.min(balance, maxBetDefault);
+//     betInput.value = max;
+//     updateTotalCostDisplay(); 
+// }
+// ************************************************************
 
-betInput.addEventListener('input', updateTotalCostDisplay); 
+// *** ลบ event listener ของ input ออก ***
+// betInput.addEventListener('input', updateTotalCostDisplay); 
+// ***************************************
+
+// *** เพิ่ม: Event Listener สำหรับปุ่มจำนวนเงิน ***
+const amountButtons = document.querySelectorAll('.amount-btn-select');
+amountButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+        const amount = parseInt(this.dataset.amount);
+        if (amount > balance) {
+            alert('ยอดเงินไม่เพียงพอสำหรับการเดิมพันจำนวนนี้');
+            return;
+        }
+        
+        amountButtons.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        selectedBetAmount = amount;
+        
+        updateTotalCostDisplay();
+    });
+});
+// **********************************************
 
 const bettingButtons = document.querySelectorAll('[data-bet-type]');
 bettingButtons.forEach(btn => {
@@ -1018,12 +1206,19 @@ bettingButtons.forEach(btn => {
 // ===============================================
 
 document.getElementById('roll').addEventListener('click', async () => {
-    const currentBetAmount = parseInt(betInput.value); 
-
+    // *** แก้ไข: ใช้ selectedBetAmount แทน input value ***
+    const currentBetAmount = selectedBetAmount; 
+    // *************************************************
+    
     if (activeBets.size === 0) { alert('กรุณาเลือกรูปแบบการเดิมพันอย่างน้อย 1 อย่าง!'); return; }
     
     const totalBetCost = currentBetAmount * activeBets.size;
     
+    if (totalBetCost === 0) {
+        alert('กรุณาเลือกจำนวนเงินเดิมพัน!');
+        return;
+    }
+
     if (totalBetCost > balance) { 
         alert(`ยอดเงินไม่เพียงพอสำหรับการเดิมพันทั้งหมด ${totalBetCost} บาท!`); 
         updateBetControls(); 
@@ -1043,7 +1238,9 @@ document.getElementById('roll').addEventListener('click', async () => {
     try {
         // ************ 1. บันทึกยอดเงินที่ถูกหักลงใน Firestore ด้วย Transaction ************
         await db.runTransaction(async (transaction) => {
-            const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentEmail); 
+            // *** แก้ไข: ใช้ currentPhone แทน currentEmail ***
+            const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentPhone); 
+            // *************************************************
             const userDoc = await transaction.get(userRef);
 
             if (!userDoc.exists) {
@@ -1072,7 +1269,9 @@ document.getElementById('roll').addEventListener('click', async () => {
                 diceValues.push(animalValues[animalName]);
             }
             
-            diceArea.innerHTML = diceResults.map(name => emojis[animals.indexOf(name)]).join(' ');
+            // *** แก้ไข: ใช้ diceImages แทน emojis ***
+            diceArea.innerHTML = diceResults.map(name => diceImages[animals.indexOf(name)]).join(' ');
+            // ****************************************
 
             const sum = diceValues.reduce((a, b) => a + b, 0);
             const counts = diceResults.reduce((acc, name) => {
@@ -1147,7 +1346,9 @@ document.getElementById('roll').addEventListener('click', async () => {
             
             // ************ 3. บันทึกยอดเงินสุดท้ายลงใน Firestore ด้วย Transaction ************
             await db.runTransaction(async (transaction) => {
-                const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentEmail);
+                // *** แก้ไข: ใช้ currentPhone แทน currentEmail ***
+                const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentPhone);
+                // *************************************************
                 transaction.update(userRef, { balance: balance });
             });
             
@@ -1160,7 +1361,9 @@ document.getElementById('roll').addEventListener('click', async () => {
     } catch (error) {
         alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล! ยอดเงินอาจไม่ถูกหัก/เพิ่ม กรุณาลองใหม่');
         
-        const latestBalance = await getUserBalance(currentEmail); 
+        // *** แก้ไข: ใช้ currentPhone แทน currentEmail ***
+        const latestBalance = await getUserBalance(currentPhone); 
+        // **********************************************
         balance = latestBalance; 
         
         balanceDisplay.textContent = balance;
@@ -1183,12 +1386,14 @@ async function checkAuthStateAndRoute() {
     document.getElementById('game-screen').style.display = 'none';
     
     // ตรวจสอบ Admin Login (Hardcoded check)
-    const emailInput = document.getElementById('email');
+    // *** แก้ไข: ใช้ phone input แทน email input ***
+    const phoneInput = document.getElementById('phone');
+    // **********************************************
     const passwordInput = document.getElementById('password');
-    const adminEmailCheck = emailInput ? emailInput.value.trim() : null;
+    const adminPhoneCheck = phoneInput ? phoneInput.value.trim() : null;
     const adminPassCheck = passwordInput ? passwordInput.value : null;
 
-    if (adminEmailCheck === ADMIN_EMAIL && adminPassCheck === ADMIN_PASS) {
+    if (adminPhoneCheck === ADMIN_EMAIL && adminPassCheck === ADMIN_PASS) {
         adminLoginSuccess();
         return;
     }
@@ -1197,13 +1402,26 @@ async function checkAuthStateAndRoute() {
         const user = auth.currentUser; 
         
         if (user) {
-            const email = user.email;
+            const authEmail = user.email;
             
-            if (email === ADMIN_EMAIL) { 
+            if (authEmail === ADMIN_EMAIL) { 
                 adminLoginSuccess();
                 return;
             }
-            loginSuccess(email, user.uid);
+            
+            // *** แก้ไข: ดึงเบอร์โทรศัพท์จริงจาก Auth Email ***
+            // (สมมติว่าเบอร์โทรศัพท์ถูกเข้ารหัสเป็น "1234567890@phone.com")
+            let phone = authEmail.split('@')[0];
+            
+            // ตรวจสอบความถูกต้องของ ID ที่ใช้ใน Firestore (เบอร์โทร/อีเมล)
+            const userDoc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(phone).get();
+            if (userDoc.exists) {
+                 loginSuccess(phone, user.uid);
+            } else {
+                 // Fallback: อาจจะเป็นผู้ใช้เก่าที่ใช้ email ตรงๆ
+                 loginSuccess(authEmail, user.uid);
+            }
+            
             return;
         }
 
