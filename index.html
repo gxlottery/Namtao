@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🎲 เกมน้ำเต้าปูปลา </title>
+<title>🎲 เกมน้ำเต้าปูปลา (Asura's Ransom Edition)</title>
+
+<script src="https://www.gstatic.com/firebasejs/7.23.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.23.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.23.0/firebase-firestore.js"></script>
+
 <style>
   /* ******************************************************** */
   /* >>>>>> การแก้ไขเพื่อล็อคหน้าจอ (ห้ามเลื่อน) <<<<<<< */
@@ -27,528 +32,365 @@
     animation: gradientBG 15s ease infinite;
     color: #fff;
     padding: 20px;
-    box-sizing: border-box; /* สำคัญ: ป้องกัน Padding เกินขอบเขต */
+    box-sizing: border-box; 
   }
   @keyframes gradientBG {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
-  h1 {
-    color: gold;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 5px rgba(255, 215, 0, 0.5);
-    margin-bottom: 20px;
+
+  /* Layout and Screen Styles */
+  .screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0;
   }
+  #auth-screen { display: flex; } /* Default visible screen */
+  #admin-screen { padding: 20px; text-align: left; overflow-y: auto; max-height: 100vh; }
+  #admin-screen h2 { text-align: center; margin-top: 0; }
   
-  /* CSS สำหรับส่วน Login/Sign-Up */
-  .auth-container {
-    background: rgba(0, 0, 0, 0.5);
+  .container {
+    background-color: rgba(0, 0, 0, 0.7);
     padding: 30px;
     border-radius: 15px;
-    max-width: 400px;
-    margin: 50px auto 0px auto; 
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  }
-  
-  /* *** Wrapper for input and eye icon *** */
-  .input-wrapper {
-      position: relative;
-      width: 90%; 
-      margin: 10px auto;
-      text-align: left;
-  }
-  
-  .auth-container input {
-    width: 100%; /* Take full width of wrapper */
-    padding: 12px;
-    padding-right: 40px; /* Space for the icon */
-    margin: 0; 
-    border-radius: 8px;
-    border: none;
-    font-size: 16px;
-    box-sizing: border-box;
-    background-color: #f9f9f9;
-    color: #333;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-  
-  /* *** Eye Icon Style *** */
-  .toggle-password {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      color: #666;
-      font-size: 18px;
-      user-select: none;
-      z-index: 10;
-  }
-  
-  .auth-container button {
-    display: block;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     width: 90%;
-    margin: 15px auto 5px auto;
-    padding: 15px 20px;
-    border: none;
-    border-radius: 12px;
-    font-size: 18px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.2s ease-out;
-    box-shadow: 
-      0 10px 20px rgba(0, 0, 0, 0.5), 
-      0 5px 10px rgba(0, 0, 0, 0.3),
-      inset 0 -5px 10px rgba(0, 0, 0, 0.3);
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-    letter-spacing: 0.5px;
-    text-align: center;
-    text-decoration: none; 
-  }
-  #auth-button {
-      background: linear-gradient(145deg, #FFDC00, #FF851B);
-      color: black;
-  }
-  .toggle-link {
-    color: #ffd700;
-    cursor: pointer;
-    text-decoration: none;
-    margin-top: 15px;
-    display: block;
-    font-size: 14px;
-    transition: 0.1s;
-  }
-  
-  /* CSS สำหรับ Admin Panel */
-  #admin-screen {
-      display: none;
-      max-width: 800px;
-      margin: 20px auto;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 20px;
-      border-radius: 15px;
-      max-height: calc(100vh - 40px);
-      overflow-y: auto;
-  }
-  #admin-screen h2 {
-      color: #33ff33;
-      text-shadow: 0 0 8px rgba(51, 255, 51, 0.5);
-  }
-  .refresh-btn-admin {
-      background-color: #007bff; 
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: 0.2s;
-      margin-bottom: 15px;
-      width: 100%;
-      max-width: 300px;
+    max-width: 400px;
   }
 
+  /* Form and Input Styles */
+  input[type="text"], input[type="password"], input[type="number"], button {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 16px;
+    font-family: 'Prompt', sans-serif;
+  }
+
+  button {
+    background-color: #f7a01a;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  button:hover:not(:disabled) { background-color: #d18413; }
+  button:disabled { background-color: #777; cursor: not-allowed; }
+  .toggle-auth {
+    margin-top: 15px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #ccc;
+  }
+  .toggle-auth:hover { color: #fff; }
+
+  .password-container {
+    position: relative;
+    margin: 8px 0;
+  }
+  .password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #333;
+    font-size: 18px;
+    user-select: none;
+  }
+  #error-message {
+    color: #ffdddd;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+
+  /* Game Screen Styles */
+  #game-screen {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  .header-game {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .balance-display {
+    background-color: #f7a01a;
+    color: #3f0d12;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+  .dice-area {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+  }
+  .dice {
+    width: 70px;
+    height: 70px;
+    background-color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    color: #3f0d12;
+  }
+
+  /* Bet Controls */
+  .bet-section {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+  }
+  .bet-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .bet-button {
+    background-color: #555;
+    padding: 15px 5px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .bet-button.selected {
+    background-color: #f7a01a;
+    border-color: #fff;
+    transform: scale(1.05);
+  }
+  .bet-amount-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .bet-amount-control button {
+    width: 30%;
+    padding: 8px;
+  }
+  .bet-amount-control span {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #f7a01a;
+  }
+
+  /* Roll Button and Result */
+  #roll {
+    font-size: 1.5em;
+    padding: 15px;
+    margin-top: 20px;
+  }
+  #result {
+    margin-top: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #f7a01a;
+    min-height: 30px;
+  }
+  .logout-btn {
+    background-color: #a71d31;
+    font-size: 0.9em;
+    width: auto;
+    padding: 5px 10px;
+  }
+  .contact-link {
+    display: block;
+    margin-top: 10px;
+    color: #929292;
+    text-decoration: none;
+    font-size: 0.9em;
+  }
+  .contact-link:hover {
+    color: #fff;
+  }
+
+  /* Admin Panel Styles */
   #user-list {
-      list-style: none;
-      padding: 0;
-      text-align: left;
-      margin-top: 20px;
+    list-style: none;
+    padding: 0;
   }
   #user-list li {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
   }
-  .user-info strong {
-      color: #FFDC00; 
-      font-size: 1.1em;
-      text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
-  }
-  .user-info {
-      font-weight: bold;
-      color: #fff;
-      min-width: 150px;
-  }
-  .user-balance {
-      color: #FFDC00;
-      margin-right: 20px;
+  .user-info, .user-balance {
+    font-size: 1em;
   }
   .admin-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-top: 10px;
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
   }
   .admin-controls input[type="number"] {
-      padding: 8px;
-      width: 80px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-      color: #333;
+    flex-grow: 1;
+    width: auto;
+    padding: 8px;
+    background-color: #fff;
+    color: #333;
   }
   .admin-controls button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: 0.1s;
+    width: auto;
+    flex-basis: 30%;
+    padding: 8px;
+    font-size: 0.9em;
   }
-  .deposit-btn-admin { background-color: #33ff33; color: black; }
-  .withdraw-btn-admin { background-color: #ff4136; color: white; }
-  .logout-btn-admin { background-color: #ccc; color: black; margin-top: 20px; width: 100%; max-width: 200px; display: block; margin-left: auto; margin-right: auto; }
+  .deposit-btn-admin { background-color: #4CAF50; }
+  .withdraw-btn-admin { background-color: #FF5722; }
+  .deposit-btn-admin:hover { background-color: #45a049; }
+  .withdraw-btn-admin:hover { background-color: #e64a19; }
 
-  /* ************************************************* */
-  /* >>>>>> CSS สำหรับหน้าเกม (แก้ไข No Scroll) <<<<<< */
-  /* ************************************************* */
-  #game-screen { 
-    display: none; /* ถูกควบคุมโดย JavaScript */
-    /* *** การแก้ไขหลัก: ใช้ Flexbox เพื่อจัดการการจัดวาง *** */
-    height: 100vh; 
-    box-sizing: border-box;
-    padding: 10px; /* ลด Padding โดยรวม */
-    overflow: hidden; /* สำคัญ: ปิดการเลื่อน (Scroll) โดยสิ้นเชิง */
-    display: flex; 
-    flex-direction: column; 
-    justify-content: space-between; /* กระจายองค์ประกอบให้เต็มพื้นที่แนวตั้ง */
-  }
-  
-  #balance {
-    background: rgba(255,255,255,0.2);
-    display: inline-block;
-    padding: 10px 20px;
-    border-radius: 25px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    font-size: 18px;
-    margin-bottom: 10px; /* ลด Margin */
-    font-weight: bold;
-    color: #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  #balance button {
-    margin-left: 10px; 
-    padding: 5px 10px; 
-    border: none; 
-    border-radius: 5px; 
-    cursor: pointer; 
-    font-weight: bold; 
-    transition: 0.1s;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-  }
-  .logout-btn { background: #c30000; color: white; }
-  .refresh-btn { background: #007bff; color: white; }
-  
-  /* NEW: สำหรับปุ่มบริการ (เติมเงิน/ถอนเงิน) */
-  .service-buttons {
-      margin-bottom: 10px; /* ลด Margin */
-      margin-top: -5px; 
-  }
-  .service-btn {
-      display: inline-block;
-      padding: 12px 25px;
-      border-radius: 30px;
-      font-size: 18px;
-      font-weight: bold;
-      text-decoration: none;
-      color: white;
-      cursor: pointer;
-      transition: all 0.2s ease-out;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-      border: 2px solid white;
-  }
-  .service-line-btn {
-      background: linear-gradient(145deg, #00C300, #3CFF3C); 
-      color: black;
-      border-color: #3CFF3C;
-  }
-  
-  /* Layout สำหรับปุ่มเดิมพันทั้งหมด */
-  .betting-area {
-      flex-shrink: 1; /* อนุญาตให้หดได้เพื่อไม่ให้เกิด Scroll */
-      max-width: 500px;
-      margin: 10px auto; /* ลด Margin */
-      overflow-y: hidden; /* ปิดการเลื่อนภายในด้วย */
-  }
-  
-  /* ปุ่มเดิมพันเดี่ยว (Single Bets) */
-  .single-bets {
-    display: grid; 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 10px; /* ปรับลดระยะห่างระหว่างปุ่ม */
-    margin-bottom: 10px; 
-  }
-  
-  /* *** การแก้ไขหลัก: ปรับขนาดปุ่มแทงเดี่ยวให้เล็กลง *** */
-  .bet-btn-base {
-    width: 100%; 
-    height: 70px; /* กำหนดความสูงคงที่ (เทียบเท่าปุ่มสูง/ต่ำ) */
-    padding-top: 0; /* ลบ padding-top: 100% ออก */
-    position: relative;
-    
-    /* ใช้ Flexbox จัดกลาง Emoji */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    
-    font-size: 35px; /* ลดขนาด Emoji */
-    border-radius: 15px; /* ปรับมุมมนให้เล็กลง */
-    cursor: pointer;
-    box-sizing: border-box;
-  }
-  /* ************************************************* */
-
-  
-  /* ปุ่มเดิมพันรวม (Compound Bets) */
-  .compound-bets {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px; 
-      margin-top: 5px;
-      margin-bottom: 10px;
-  }
-  
-  /* CSS สำหรับปุ่มสูง/ต่ำ/ตอง (เพื่อให้ขนาดเข้ากัน) */
-  .bet-btn-compound {
-      padding: 10px 5px; 
-      font-size: 14px;
-      font-weight: bold;
-      border-radius: 8px;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-      min-height: 50px; /* กำหนดความสูงขั้นต่ำเพื่อให้ขนาดใกล้เคียง */
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-  }
-  .bet-high { background: linear-gradient(to top, #ff4136, #ff725e); color: white; border: 2px solid #ff725e; }
-  .bet-low { background: linear-gradient(to top, #0074D9, #4192d9); color: white; border: 2px solid #4192d9; }
-  .bet-triple-any { background: linear-gradient(to top, #FFDC00, #FFE033); color: black; border: 2px solid #FFE033; }
-  .bet-btn-compound.selected { transform: scale(1.05); border: 4px solid white; box-shadow: 0 0 15px rgba(255, 255, 255, 0.7); }
-
-  /* CSS สำหรับปุ่มเดิมพันเดี่ยว */
-  .bet-btn-single {
-      background: linear-gradient(to top, #2ECC40, #3CFF53);
-      color: white;
-      border: 2px solid #3CFF53;
-  }
-  .bet-btn-single.selected { transform: scale(1.05); border: 4px solid white; box-shadow: 0 0 15px rgba(255, 255, 255, 0.7); }
-
-
-  .bet-control { margin-bottom: 15px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
-  
-  button#roll {
-    /* ใช้ margin-top: auto; ใน #game-screen (Flexbox) เพื่อดันปุ่มลงด้านล่าง */
-    background: gold;
-    color: black;
-    padding: 18px 40px;
-    border-radius: 20px;
-    font-size: 22px;
-    font-weight: bold;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-    transition: 0.1s;
-    margin-top: 10px; /* ให้มีระยะห่างกับส่วนควบคุมเดิมพัน */
-  }
-  #roll:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      box-shadow: none;
-  }
-  .dice { font-size: 60px; margin: 10px 0; /* ลด Margin */ text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-  .result { margin-top: 10px; font-size: 24px; color: #33ff33; text-shadow: 0 0 15px #33ff33, 0 0 5px #33ff33; font-weight: bold; }
-  
-  /* Responsive Design */
+  /* Mobile Adjustments (Optional but Recommended) */
   @media (max-width: 600px) {
-    body { padding: 5px; } /* ลด Padding ของ Body */
-    
-    #game-screen {
-        padding: 5px; /* ลด padding ลงอีกสำหรับมือถือ */
-    }
-
-    h1 { margin-top: 5px; margin-bottom: 5px; font-size: 20px; } 
-    #balance { margin-bottom: 8px; padding: 8px 15px; font-size: 16px; } 
-    .service-buttons { margin-bottom: 8px; margin-top: 0px; } 
-    .service-btn { padding: 8px 15px; font-size: 14px; }
-    
-    .single-bets { gap: 5px; margin-bottom: 8px; } /* ลด Gap ลงอีก */
-    
-    /* *** การแก้ไขหลักสำหรับมือถือ: ปรับขนาดปุ่มแทงเดี่ยว *** */
-    .bet-btn-base { 
-        font-size: 25px; 
-        height: 50px; /* เล็กลงสำหรับมือถือ */
-        border-radius: 10px;
-    }
-    /* **************************************** */
-
-    .betting-area { margin: 5px auto; } 
-
-    .compound-bets { gap: 5px; margin-top: 5px; margin-bottom: 8px; }
-    .bet-btn-compound { padding: 6px 3px; font-size: 12px; min-height: 40px; }
-
-    .bet-control { 
-      flex-direction: column; 
-      gap: 5px; 
-      margin-bottom: 8px;
-    }
-    .bet-control label { font-size: 14px; }
-    #betAmount { width: 100px; padding: 8px; font-size: 16px; }
-    .bet-input-group .bet-btn { padding: 6px 8px; font-size: 12px; }
-    
-    button#roll { padding: 10px 20px; font-size: 16px; }
-    .dice { font-size: 40px; margin: 5px 0; } 
-    .result { margin-top: 5px; font-size: 18px; }
-    
-    #admin-screen { padding: 10px; }
+    body { padding: 10px; }
+    .container { padding: 20px; }
+    .dice { width: 50px; height: 50px; font-size: 30px; }
+    .bet-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 <body>
-    
-  <div id="auth-screen" style="display:none;">
-    <h1>เข้าสู่ระบบ / สมัครสมาชิก 🎯</h1>
-    
-    <form class="auth-container" onsubmit="handleAuth(event); return false;" novalidate>
-      <h2 id="auth-title">เข้าสู่ระบบ</h2>
-      
-      <div class="input-wrapper">
-          <input type="text" id="phoneInput" placeholder="เบอร์โทรศัพท์ (Phone Number)" required>
-      </div>
 
-      <div class="input-wrapper">
-          <input type="password" id="password" placeholder="รหัสผ่าน (Password)" required>
-          <span class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁️</span>
-      </div>
-      <div id="signup-fields" style="display:none;">
-          <div class="input-wrapper">
-              <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required>
-              <span class="toggle-password" onclick="togglePasswordVisibility('confirmPassword', this)">👁️</span>
-          </div>
-          <div class="input-wrapper">
-              <input type="text" id="gameUsername" placeholder="ชื่อผู้ใช้ที่จะแสดงในเกม" required>
-          </div>
-      </div>
-
-      <button id="auth-button" type="submit">เข้าสู่ระบบ</button>
-      <p id="error-message" style="color: red; margin-top: 10px; font-size: 14px;"></p>
-      
-      <a class="toggle-link" onclick="toggleAuthMode()">ยังไม่มีบัญชี? สมัครสมาชิกที่นี่</a>
+<div id="auth-screen" class="screen">
+  <div class="container">
+    <h1 id="auth-title">เข้าสู่ระบบ</h1>
+    
+    <form id="auth-form" onsubmit="handleAuth(event)">
+        <input type="text" id="phone" placeholder="เบอร์โทรศัพท์ (ผู้ใช้) / อีเมล (แอดมิน)" required autocomplete="username">
+        
+        <input type="text" id="gameUsername" placeholder="ชื่อผู้ใช้ในเกม (3-20 ตัวอักษร)" style="display:none;" maxlength="20">
+        
+        <div class="password-container">
+            <input type="password" id="password" placeholder="รหัสผ่าน (อย่างน้อย 12 ตัวอักษร)" required autocomplete="current-password">
+            <span class="password-toggle" onclick="togglePasswordVisibility('password')">👁️</span>
+        </div>
+        
+        <div class="password-container" id="confirm-password-container" style="display:none;">
+            <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required autocomplete="new-password">
+            <span class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">👁️</span>
+        </div>
+        
+        <div id="error-message"></div>
+        
+        <button type="submit" id="auth-button">เข้าสู่ระบบ</button>
     </form>
-
-    <div class="service-buttons" style="margin-top: 30px;">
-        <p style="font-size: 14px; margin-bottom: 5px; color: #f0f0f0;">ปัญหาการเข้าสู่ระบบ/ลืมรหัสผ่าน</p>
-        <button onclick="openLineOAPopup()" class="service-btn service-line-btn" style="padding: 10px 20px; font-size: 16px;">
-            📞 ติดต่อแอดมิน (Line OA)
-        </button>
-    </div>
-
+    
+    <div class="toggle-auth" onclick="toggleAuthMode()">ยังไม่มีบัญชี? สมัครสมาชิกที่นี่</div>
+    <a href="#" class="contact-link">📞 ปัญหาการเข้าสู่ระบบ/ลืมรหัสผ่าน</a>
   </div>
-  
-  <div id="admin-screen">
-      <h2>🛠️ แผงควบคุมผู้ดูแลระบบ</h2>
-      
-      <button onclick="renderUserList()" class="refresh-btn-admin">
-          🔄 รีเฟรชรายชื่อผู้เล่น
-      </button>
+</div>
 
-      <ul id="user-list">
-          </ul>
-      
-      <button onclick="adminLogout()" class="logout-btn-admin">ออกจากระบบแอดมิน</button>
-  </div>
-  
-  <div id="game-screen">
+<div id="game-screen" class="screen">
+  <div style="width: 100%; max-width: 600px;">
     <h1>🎲 เกมน้ำเต้าปูปลา 🎲</h1>
     
-    <div class="service-buttons">
-        <button onclick="openLineOAPopup()" class="service-btn service-line-btn">
-            💸 เติมเงิน/ถอนเงิน (Line OA)
-        </button>
+    <div class="header-game">
+      <span id="usernameDisplay">ยอดเงิน ผู้ใช้:</span>
+      <div class="balance-display">
+        💰 <span id="playerBalance">0</span> บาท
+      </div>
+      <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+    </div>
+
+    <a href="#" class="contact-link">💸 เติมเงิน/ถอนเงิน (Line OA)</a>
+
+    <div class="dice-area">
+      <div class="dice" id="dice1">?</div>
+      <div class="dice" id="dice2">?</div>
+      <div class="dice" id="dice3">?</div>
     </div>
     
-    <div id="balance">
-        💰 <span id="usernameDisplay">ยอดเงิน:</span> <span id="playerBalance">0</span> บาท
-        <button onclick="forceRefresh()" class="refresh-btn">🔄</button>
-        <button onclick="logout()" class="logout-btn">ออกจากระบบ</button>
-    </div>
-
-    <div class="betting-area">
-        <p>แทงเดี่ยว (จ่าย 1-3 เท่า):</p>
-        <div class="single-bets">
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="น้ำเต้า"><span>🍐</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ปู"><span>🦀</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ปลา"><span>🐟</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="เสือ"><span>🐯</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="ไก่"><span>🐔</span></button>
-            <button class="bet-btn-base bet-btn-single" data-bet-type="single" data-bet-value="กุ้ง"><span>🦐</span></button>
-        </div>
-
-        <p>แทงรวม (สูง/ต่ำ, ตอง):</p>
-        <div class="compound-bets">
-            <button class="bet-btn-compound bet-high" data-bet-type="high_low" data-bet-value="High">
-                สูง (11-17)<br>จ่าย 1:1
-            </button>
-            <button class="bet-btn-compound bet-low" data-bet-type="high_low" data-bet-value="Low">
-                ต่ำ (4-10)<br>จ่าย 1:1
-            </button>
-            <button class="bet-btn-compound bet-triple-any" data-bet-type="triple_any" data-bet-value="Any">
-                ตอง (ออก 3 เหมือนกัน)<br>จ่าย 7:1
-            </button>
-        </div>
-    </div>
-
-    <div class="bet-control">
-      <label for="betAmount">จำนวนเงินเดิมพัน (ต่อการเลือก):</label>
-      
-      <div class="bet-input-group">
-          <button class="bet-btn" onclick="setMaxBet()">เดิมพันสูงสุด</button>
-          <input type="number" id="betAmount" value="10" min="0" max="1000">
-      </div>
-      
-      <div id="totalBetDisplay" style="width: 100%; margin-top: 5px; font-weight: bold; color: #33ff33; font-size: 18px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 10px;">
-          ยอดเดิมพันรวม: <span>0</span> บาท
+    <div class="bet-section">
+      <h3>แทงเดี่ยว (จ่าย 1-3 เท่า)</h3>
+      <div class="bet-grid">
+        <button class="bet-button" data-symbol="ปู">🦀 ปู</button>
+        <button class="bet-button" data-symbol="ปลา">🐟 ปลา</button>
+        <button class="bet-button" data-symbol="เสือ">🐯 เสือ</button>
+        <button class="bet-button" data-symbol="ไก่">🐔 ไก่</button>
+        <button class="bet-button" data-symbol="กุ้ง">🦐 กุ้ง</button>
+        <button class="bet-button" data-symbol="น้ำเต้า">🍐 น้ำเต้า</button>
       </div>
     </div>
+    
+    <div class="bet-section">
+      <h3>แทงรวม (สูง/ต่ำ, ตอง)</h3>
+      <div class="bet-grid">
+        <button class="bet-button" data-symbol="สูง">สูง (11-17)</button>
+        <button class="bet-button" data-symbol="ต่ำ">ต่ำ (4-10)</button>
+        <button class="bet-button" data-symbol="ตอง">ตอง (3 เหมือนกัน)</button>
+      </div>
+    </div>
+
+    <div class="bet-amount-control">
+      <button onclick="setBetAmount(10)">+10</button>
+      <button onclick="setBetAmount(100)">+100</button>
+      <button onclick="setBetAmount(1000)">+1000</button>
+      <span>เดิมพันต่อการเลือก: <strong id="currentBetAmount">10</strong> บาท</span>
+    </div>
+    <div style="margin-top: 10px;">
+        <input type="range" id="betRange" min="10" max="1000" step="10" value="10" style="width: 100%;">
+        <p>ยอดเดิมพันรวมที่ถูกเลือก: <strong id="totalCost">0</strong> บาท</p>
+    </div>
+
+    <div id="result"></div>
     
     <button id="roll">หมุนลูกเต๋า</button>
-
-    <div id="diceArea" class="dice"></div>
-    <div id="result" class="result"></div>
   </div>
+</div>
 
-<audio id="rollSound" src="https://www.soundjay.com/misc/sounds/dice-roll-1.mp3"></audio>
-<audio id="winSound" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
+<div id="admin-screen" class="screen">
+    <div style="width: 100%; max-width: 800px; margin: auto;">
+        <h2>🛠️ แผงควบคุมผู้ดูแลระบบ</h2>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+             <button onclick="renderUserList()" style="width: 48%; background-color: #1a73e8;">🔄 รีเฟรชรายชื่อผู้เล่น</button>
+             <button onclick="adminLogout()" style="width: 48%; background-color: #a71d31;">ออกจากระบบแอดมิน</button>
+        </div>
+        
+        <ul id="user-list">
+            <li>กำลังโหลดรายชื่อผู้เล่น...</li>
+        </ul>
+        
+        <div id="admin-status" style="margin-top: 20px; color: #f7a01a;"></div>
+    </div>
+</div>
 
 <script>
+
 // ===============================================
-// 🎯🎯🎯 1. Firebase Configuration (โค้ดจริงของคุณ) 🎯🎯🎯
+// 1. Firebase Configuration (🚨🚨🚨 ต้องแก้ไขตรงนี้ 🚨🚨🚨)
 // ===============================================
 const firebaseConfig = {
-    apiKey: "AIzaSyACTSU6LYObSv5gEAfKJt4Yr4LaCCAkQvw",
-    authDomain: "goldorax-game.firebaseapp.com",
-    databaseURL: "https://goldorax-game-default-rtdb.asia-southeast1.firebasedatabase.app", 
-    projectId: "goldorax-game",
-    storageBucket: "goldorax-game.firebasestorage.app",
-    messagingSenderId: "601999451419",
-    appId: "1:601999451419:web:f0782a8437b493eb8f5fbe",
-    measurementId: "G-09PW99QK06" 
+  apiKey: "YOUR_API_KEY_HERE", // เช่น AIzaSy...", 
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
-
-const HOO_HEY_HOW_COLLECTION = "hoo_hey_how_players"; 
 
 // ===============================================
 // 2. Initialize Firebase และ Global Variables
@@ -559,28 +401,40 @@ const auth = firebase.auth();
 const db = firebase.firestore(); 
 
 const ADMIN_EMAIL = 'admin@gmail.com'; 
-const ADMIN_PASS = 'Asura@Ransom4570!'; 
+const ADMIN_PASS = 'Asura@Ransom4570!'; // รหัสผ่านที่ใช้ในการ Sign In
+
+const USERS_COLLECTION = "hoo_hey_how_players"; 
 
 let isLoginMode = true;
 const balanceDisplay = document.getElementById('playerBalance');
-const betInput = document.getElementById('betAmount'); 
+let selectedBetAmount = 10; 
 let balance = 0;
-// *** currentEmail จะเก็บ "เบอร์โทรศัพท์ล้วน" ซึ่งใช้เป็น Document ID ของ Firestore ***
-let currentEmail = null; 
+// ใช้ currentID แทน currentPhone เพื่อรองรับทั้ง Phone (User) และ Email (Admin)
+let currentID = null; 
 let currentDisplayName = null; 
+let currentRole = 'user'; // 'user' หรือ 'admin'
 
 const minBet = 10;
 const maxBetDefault = 1000;
+let maxBet = maxBetDefault; // จะถูกอัปเดตตามยอดเงินจริง
 
-// ฟังก์ชันเปิด/ปิดการแสดงรหัสผ่าน
-function togglePasswordVisibility(inputId, iconElement) {
-    const input = document.getElementById(inputId);
+// Bet Logic Variables
+const symbols = ["น้ำเต้า", "ปู", "ปลา", "เสือ", "ไก่", "กุ้ง"];
+const symbolMap = { "น้ำเต้า": '🍐', "ปู": '🦀', "ปลา": '🐟', "เสือ": '🐯', "ไก่": '🐔', "กุ้ง": '🦐' };
+let bets = {};
+
+// ===============================================
+// 3. Helper Functions
+// ===============================================
+function togglePasswordVisibility(id) {
+    const input = document.getElementById(id);
+    const toggle = input.nextElementSibling;
     if (input.type === 'password') {
         input.type = 'text';
-        iconElement.textContent = '🙈'; // เปลี่ยนไอคอนเป็นปิดตา (แนะนำให้ซ่อน)
+        toggle.textContent = '🔒'; 
     } else {
         input.type = 'password';
-        iconElement.textContent = '👁️'; // เปลี่ยนไอคอนเป็นเปิดตา (แนะนำให้แสดง)
+        toggle.textContent = '👁️'; 
     }
 }
 
@@ -588,116 +442,135 @@ function toggleAuthMode() {
     isLoginMode = !isLoginMode;
     document.getElementById('auth-title').textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
     document.getElementById('auth-button').textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
-    document.getElementById('signup-fields').style.display = isLoginMode ? 'none' : 'block';
-    document.getElementById('error-message').textContent = '';
-    document.querySelector('.toggle-link').textContent = isLoginMode 
-        ? 'ยังไม่มีบัญชี? สมัครสมาชิกที่นี่' 
-        : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบที่นี่';
-        
-    // เคลียร์ค่าใน Input เมื่อสลับโหมด
-    document.getElementById('phoneInput').value = ''; // *** แก้ไข ID ***
-    document.getElementById('password').value = '';
-    if (document.getElementById('confirmPassword')) {
-         document.getElementById('confirmPassword').value = '';
-    }
-    if (document.getElementById('gameUsername')) {
-         document.getElementById('gameUsername').value = '';
-    }
     
-    // ตรวจสอบและรีเซ็ตไอคอนเปิด/ปิดรหัสผ่าน
-    const passIcon = document.querySelector('#password + .toggle-password');
-    if (passIcon) {
-        document.getElementById('password').type = 'password';
-        passIcon.textContent = '👁️';
-    }
-    const confirmPassIcon = document.querySelector('#confirmPassword + .toggle-password');
-    if (confirmPassIcon) {
-        document.getElementById('confirmPassword').type = 'password';
-        confirmPassIcon.textContent = '👁️';
+    document.getElementById('gameUsername').style.display = isLoginMode ? 'none' : 'block';
+    document.getElementById('confirm-password-container').style.display = isLoginMode ? 'none' : 'block';
+    document.querySelector('.toggle-auth').textContent = isLoginMode ? 'ยังไม่มีบัญชี? สมัครสมาชิกที่นี่' : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ';
+    
+    document.getElementById('error-message').textContent = '';
+    
+    // Clear fields
+    document.getElementById('phone').value = '';
+    document.getElementById('password').value = '';
+    if (!isLoginMode) {
+        document.getElementById('gameUsername').value = '';
+        document.getElementById('confirmPassword').value = '';
     }
 }
 
 // ===============================================
-// 3. User Authentication (ปรับปรุงการจัดการ Submit และ Error)
+// 4. Authentication Core Logic
 // ===============================================
+
 async function handleAuth(event) {
-    // *** แก้ไข: ป้องกันการส่งฟอร์มมาตรฐานของเบราว์เซอร์ ***
     if (event) {
         event.preventDefault(); 
     }
 
-    // *** รับค่าจากช่องกรอกเบอร์โทรศัพท์ (ID: phoneInput) ***
-    const authInput = document.getElementById('phoneInput').value.trim(); 
+    const phoneOrEmail = document.getElementById('phone').value.trim();
     const password = document.getElementById('password').value;
     const errorMessage = document.getElementById('error-message');
     errorMessage.textContent = ''; 
     
-    // ตั้งค่าปุ่มเป็นสถานะกำลังโหลด
     const authButton = document.getElementById('auth-button');
     authButton.textContent = 'กำลังดำเนินการ...';
     authButton.disabled = true;
 
-    if (!authInput || !password) {
-        errorMessage.textContent = 'กรุณากรอกเบอร์โทรศัพท์/รหัสผ่านให้ครบถ้วน';
-    }
-    
-    if (errorMessage.textContent !== '') {
-        authButton.textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
-        authButton.disabled = false;
-        return;
-    }
-    
-    let firebaseEmail = '';
-    let firestoreDocId = ''; // จะเก็บเบอร์โทรศัพท์ล้วน
-    
-    // ตรวจสอบ Admin Login (Hardcoded) 
-    if (authInput === ADMIN_EMAIL && password === ADMIN_PASS) {
-        adminLoginSuccess();
-        return;
-    }
+    // 1. ตรวจสอบว่าเป็น Admin Login หรือไม่
+    let authEmail;
+    let isAttemptingAdmin = false;
 
-    // *** NEW LOGIC: ตรวจสอบว่าเป็นเบอร์โทรศัพท์ 10 หลักหรือไม่ ***
-    if (/^\d{10}$/.test(authInput)) {
-        // ถ้าเป็นเบอร์โทรศัพท์ 10 หลัก 
-        firebaseEmail = `${authInput}@phone.com`; 
-        firestoreDocId = authInput; 
+    if (phoneOrEmail.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASS) {
+        // กรณี Admin: ล็อกอินด้วย Email/Pass ตรงๆ
+        authEmail = ADMIN_EMAIL;
+        isAttemptingAdmin = true;
     } else {
-        // ถ้าไม่ใช่เบอร์โทรศัพท์ 10 หลัก และไม่ใช่ Admin Email ให้แสดง Error
-        errorMessage.textContent = '❌ การลงทะเบียนต้องใช้เบอร์โทรศัพท์ 10 หลักเท่านั้น';
+        // กรณี User: ล็อกอินด้วย Phone (แปลงเป็น Email)
+        if (!/^\d+$/.test(phoneOrEmail)) {
+            errorMessage.textContent = '❌ รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง (ต้องเป็นตัวเลขเท่านั้น)';
+            authButton.textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
+            authButton.disabled = false;
+            return;
+        }
+        authEmail = phoneOrEmail + "@phone.com";
+    }
+    
+    if (!phoneOrEmail || !password) {
+        errorMessage.textContent = 'กรุณากรอกข้อมูลให้ครบถ้วน';
         authButton.textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
         authButton.disabled = false;
         return;
     }
-    // *** END NEW LOGIC ***
     
     try {
         await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         if (isLoginMode) {
-            // *** ใช้ firebaseEmail ในการล็อกอิน ***
-            await auth.signInWithEmailAndPassword(firebaseEmail, password); 
             
-            // ล้างช่องกรอกหลังจากเข้าสู่ระบบสำเร็จ
-            document.getElementById('phoneInput').value = '';
-            document.getElementById('password').value = '';
+            await auth.signInWithEmailAndPassword(authEmail, password);
+            const userId = isAttemptingAdmin ? ADMIN_EMAIL : phoneOrEmail; // Doc ID: email สำหรับ Admin, phone สำหรับ User
             
-            checkAuthStateAndRoute(); 
+            // 2. ตรวจสอบ Role ใน Firestore
+            const userDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
+            
+            if (isAttemptingAdmin) {
+                if (userDoc.exists && userDoc.data().role === 'admin') {
+                    // Admin ล็อกอินสำเร็จ
+                    adminLoginSuccess(ADMIN_EMAIL);
+                    return;
+                } else {
+                    // ล็อกอินด้วย ADMIN_EMAIL/PASS แต่ไม่มี role: 'admin' ใน Firestore
+                    await auth.signOut(); // บังคับออกจากระบบ
+                    throw new Error("❌ บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ");
+                }
+            } else {
+                // User ล็อกอินสำเร็จ (ต้องมี Doc ID เป็นเบอร์โทรศัพท์ใน Firestore)
+                 if (userDoc.exists && userDoc.data().role === 'user') {
+                    document.getElementById('phone').value = '';
+                    document.getElementById('password').value = '';
+                    loginSuccess(userId, auth.currentUser.uid); 
+                 } else {
+                    await auth.signOut(); // บังคับออกจากระบบ
+                    throw new Error("❌ ไม่พบบัญชีผู้ใช้ในระบบ กรุณาสมัครสมาชิก");
+                 }
+            }
         } else {
-            // SIGN UP Logic
+            // SIGN UP Logic (User Only)
+            if (isAttemptingAdmin) {
+                 errorMessage.textContent = 'ไม่สามารถสมัครบัญชีผู้ดูแลระบบผ่านหน้านี้ได้';
+                 authButton.textContent = 'สมัครสมาชิก';
+                 authButton.disabled = false;
+                 return;
+            }
+            
             const confirmPassword = document.getElementById('confirmPassword').value;
             const gameUsername = document.getElementById('gameUsername').value.trim();
             
+            // ตรวจสอบเงื่อนไขการสมัครสมาชิก (Synchronous Check)
             if (!gameUsername || gameUsername.length < 3 || gameUsername.length > 20) {
-                 errorMessage.textContent = 'ชื่อผู้ใช้ในเกมต้องมี 3-20 ตัวอักษร';
+                 errorMessage.textContent = '❌ ชื่อผู้ใช้ในเกมต้องมี 3-20 ตัวอักษร';
+            } else if (password.length < 12) { 
+                errorMessage.textContent = '❌ รหัสผ่านต้องมีความยาวอย่างน้อย 12 ตัวอักษร'; 
+            } else if (password !== confirmPassword) {
+                errorMessage.textContent = '❌ รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
             }
             
-            // *** แก้ไข: รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร (ตามที่ Firebase กำหนดขั้นต่ำ) ***
-            if (password.length < 6) { 
-                errorMessage.textContent = 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร'; 
+            // หยุดการทำงานทันทีหากมีข้อผิดพลาดเบื้องต้น
+            if (errorMessage.textContent !== '') {
+                 authButton.textContent = 'สมัครสมาชิก';
+                 authButton.disabled = false;
+                 return; 
             }
-
-            if (password !== confirmPassword) {
-                errorMessage.textContent = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
+            
+            // ตรวจสอบกับ Firestore (Asynchronous Check)
+            const existingUserPhone = await db.collection(USERS_COLLECTION).doc(phoneOrEmail).get();
+            if (existingUserPhone.exists) {
+                errorMessage.textContent = '❌ เบอร์โทรศัพท์นี้ถูกใช้ลงทะเบียนแล้ว! กรุณาเข้าสู่ระบบ หรือใช้เบอร์อื่น';
+            }
+            
+            const existingUsernames = await db.collection(USERS_COLLECTION).where('displayName', '==', gameUsername).get();
+            if (!existingUsernames.empty) {
+                errorMessage.textContent = '❌ ชื่อผู้ใช้นี้มีคนใช้แสดงในเกมแล้ว! กรุณาเลือกชื่ออื่น';
             }
             
             if (errorMessage.textContent !== '') {
@@ -706,113 +579,78 @@ async function handleAuth(event) {
                  return;
             }
 
-            const existingUsernames = await db.collection(HOO_HEY_HOW_COLLECTION).where('displayName', '==', gameUsername).get();
-            if (!existingUsernames.empty) {
-                errorMessage.textContent = '❌ ชื่อผู้ใช้นี้มีคนใช้แสดงในเกมแล้ว! กรุณาเลือกชื่ออื่น';
-                authButton.textContent = 'สมัครสมาชิก';
-                authButton.disabled = false;
-                return;
-            }
-            
-            // *** ใช้ firebaseEmail ในการสร้างบัญชี ***
-            const userCredential = await auth.createUserWithEmailAndPassword(firebaseEmail, password);
+            // 3. สร้างบัญชี Firebase Auth และ Firestore Document
+            const userCredential = await auth.createUserWithEmailAndPassword(authEmail, password);
             const user = userCredential.user;
 
-            // หน่วงเวลา 300 มิลลิวินาที เพื่อให้ Auth Token พร้อมใช้สำหรับการเขียน Firestore
             await new Promise(resolve => setTimeout(resolve, 300)); 
 
-            // *** ใช้ firestoreDocId (เบอร์โทรศัพท์ล้วน) เป็น Document ID ***
-            await db.collection(HOO_HEY_HOW_COLLECTION).doc(firestoreDocId).set({
-                email: firebaseEmail, // บันทึก dummy email ไว้ใน Firestore ด้วย
+            // ใช้ phoneOrEmail เป็น Doc ID ใน Firestore (สำหรับ User)
+            await db.collection(USERS_COLLECTION).doc(phoneOrEmail).set({
+                phone: phoneOrEmail, 
                 displayName: gameUsername, 
                 balance: 0,
-                uid: user.uid 
+                uid: user.uid,
+                role: 'user' 
             });
-            
+
             alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบอีกครั้ง'); 
             toggleAuthMode();
         }
         
     } catch (error) {
-        // *** แก้ไข: พิมพ์ error เต็มใน Console สำหรับ Debug ***
         console.error("Firebase Auth Error Details:", error); 
         
-        let displayError = 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาติดต่อแอดมิน';
+        let displayError = error.message;
 
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            displayError = '❌ เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
+            displayError = '❌ เบอร์โทรศัพท์/อีเมล หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
         } else if (error.code === 'auth/email-already-in-use') {
-             // หากเป็น admin email
-            if (authInput === ADMIN_EMAIL) {
-                displayError = '❌ นี่คืออีเมลผู้ดูแลระบบ โปรดใช้เบอร์โทรศัพท์หรือเข้าสู่ระบบในฐานะผู้ดูแลระบบ';
-            } else {
-                displayError = '❌ เบอร์โทรศัพท์นี้มีคนใช้แล้ว! กรุณาลองเข้าสู่ระบบ หรือใช้เบอร์โทรศัพท์อื่น';
-            }
+             displayError = '❌ เบอร์โทรศัพท์นี้ถูกใช้ลงทะเบียนแล้ว! กรุณาเข้าสู่ระบบ';
         } else if (error.code === 'auth/weak-password') {
-            displayError = 'รหัสผ่านอ่อนแอเกินไป (ต้องมีอย่างน้อย 6 ตัวอักษร)';
-        } else if (error.code === 'auth/operation-not-allowed') {
-            displayError = '⚠️ ระบบการลงทะเบียนถูกปิดใช้งาน! กรุณาแจ้งแอดมินให้เปิดใช้งาน "Email/Password" ใน Firebase Console';
-        } else if (error.code === 'auth/invalid-email') {
-             displayError = 'รูปแบบอีเมลปลอมมีปัญหา';
-        } else if (error.message.includes('permission')) {
-             // หากเกิด Error "Missing or insufficient permissions" ในขั้นตอน Set
-             displayError = '❌ ข้อผิดพลาดสิทธิ์: โปรดตรวจสอบว่าคุณได้กด "Publish" กฎ Firestore Rules ที่ถูกต้องแล้ว';
-        } else {
-            displayError = `เกิดข้อผิดพลาด: ${error.message}`; 
+             displayError = '❌ รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร (ถึงแม้จะกำหนดเป็น 12 แล้วก็ตาม)';
         }
         
         errorMessage.textContent = displayError;
         
     } finally {
-        // คืนค่าปุ่มเข้าสู่ระบบเสมอ
         authButton.textContent = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
         authButton.disabled = false;
     }
 }
 
 // ===============================================
-// 4. User Experience Handlers
+// 5. User Experience Handlers
 // ===============================================
-
-function openLineOAPopup() {
-    const lineOALink = 'https://lin.ee/Mm1caQx';
-    const width = 600; 
-    const height = 800; 
-    
-    const left = (screen.width / 2) - (width / 2);
-    const top = (screen.height / 2) - (height / 2);
-
-    window.open(
-        lineOALink, 
-        '_blank', 
-        `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
-    );
-}
-
-// *** แก้ไข: รับ docId (เบอร์โทรศัพท์ล้วน) แทน email ***
-async function loginSuccess(docId, uid) {
-    currentEmail = docId; // currentEmail เก็บเบอร์โทรศัพท์ล้วน (Doc ID)
+async function loginSuccess(userId, uid) {
+    currentID = userId;
+    currentRole = 'user'; 
     
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
-    document.getElementById('game-screen').style.display = 'flex'; // *** ใช้ 'flex' เพื่อให้ layout ทำงาน ***
+    document.getElementById('game-screen').style.display = 'flex'; 
     
     history.pushState({ screen: 'game' }, '', window.location.pathname);
     
-    // *** ใช้ docId (เบอร์โทรศัพท์ล้วน) เป็น Document ID ***
-    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(docId);
+    const userRef = db.collection(USERS_COLLECTION).doc(userId);
 
+    // Real-time listener สำหรับยอดเงิน
     userRef.onSnapshot(doc => {
         if (doc.exists) {
-            currentDisplayName = doc.data().displayName || docId; // แสดงเบอร์โทรถ้าไม่มีชื่อผู้ใช้
-            balance = doc.data().balance; 
+            currentDisplayName = doc.data().displayName || userId; 
+            balance = doc.data().balance || 0; 
         } else {
+            // หาก document ถูกลบ (ไม่ควรเกิดขึ้น)
             balance = 0; 
-            currentDisplayName = docId;
+            currentDisplayName = userId;
+            auth.signOut();
+            alert("บัญชีผู้ใช้ถูกลบออกจากระบบ กรุณาล็อกอินใหม่");
+            window.location.reload();
+            return;
         }
         
         document.getElementById('usernameDisplay').textContent = `ยอดเงิน ${currentDisplayName}:`; 
-        balanceDisplay.textContent = balance;
+        balanceDisplay.textContent = balance.toLocaleString('th-TH');
         updateBetControls(); 
         updateTotalCostDisplay(); 
 
@@ -820,31 +658,7 @@ async function loginSuccess(docId, uid) {
         
     }, err => {
         console.error("Error listening to user balance:", err);
-        document.getElementById('result').textContent = '⚠️ ข้อผิดพลาด: ไม่สามารถอัปเดตยอดเงินได้แบบ Real-time';
     });
-}
-
-function forceRefresh() {
-    document.getElementById('result').textContent = 'กำลังรีเฟรชข้อมูล (ระบบจะโหลดหน้าจอใหม่)...';
-    setTimeout(() => {
-        window.location.reload(); 
-    }, 500); 
-}
-
-function updateBetControls() {
-    let defaultBet = Math.min(balance > 0 ? 10 : 0, balance);
-    betInput.value = defaultBet;
-    betInput.min = balance > 0 ? minBet : 0;
-    betInput.max = Math.min(balance, maxBetDefault);
-
-    const rollButton = document.getElementById('roll');
-    if (balance === 0) {
-        rollButton.disabled = true;
-        rollButton.textContent = '⚠️ เติมเงินเพื่อเริ่มเล่น';
-    } else {
-        rollButton.disabled = false;
-        rollButton.textContent = 'หมุนลูกเต๋า';
-    }
 }
 
 function logout() {
@@ -852,11 +666,13 @@ function logout() {
     window.location.reload(); 
 }
 
-
 // ===============================================
-// 5. Admin Panel Logic 
+// 6. Admin Panel Logic 
 // ===============================================
-function adminLoginSuccess() {
+function adminLoginSuccess(userId) {
+    currentID = userId;
+    currentRole = 'admin'; 
+    
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'block';
@@ -865,32 +681,41 @@ function adminLoginSuccess() {
 }
 
 function adminLogout() {
+    auth.signOut(); 
     window.location.reload(); 
 }
 
 async function renderUserList() {
     const userListElement = document.getElementById('user-list');
-    userListElement.innerHTML = '';
+    userListElement.innerHTML = '<li>กำลังโหลดรายชื่อผู้เล่น...</li>';
     
     try {
-        const snapshot = await db.collection(HOO_HEY_HOW_COLLECTION).get();
+        // ดึงเฉพาะผู้เล่นที่มี role 'user'
+        const snapshot = await db.collection(USERS_COLLECTION)
+                                 .where('role', '==', 'user')
+                                 .orderBy('displayName')
+                                 .get();
         
+        userListElement.innerHTML = '';
         let userCount = 0;
+
         snapshot.forEach(doc => {
-            // doc.id คือ "เบอร์โทรศัพท์ล้วน" หรือ "admin@gmail.com"
-            const docId = doc.id; 
+            const userId = doc.id; // เบอร์โทรศัพท์ (Doc ID)
             const user = doc.data();
-            const displayName = user.displayName || docId; 
-            
+            const displayName = user.displayName || userId; 
+            const contactInfo = user.phone ? `เบอร์โทร: <strong>${user.phone}</strong>` : `ID: <strong>${userId}</strong>`; 
+
             const listItem = document.createElement('li');
+            const safeId = userId.replace(/[^a-zA-Z0-9]/g, '_');
+
             listItem.innerHTML = `
                 <span class="user-info">ชื่อเกม: <strong>${displayName}</strong></span> 
-                <span class="user-info">เบอร์/Doc ID: <strong>${docId}</strong></span> 
-                <span class="user-balance">ยอดเงิน: ${user.balance} บาท</span>
+                <span class="user-info">${contactInfo}</span> 
+                <span class="user-balance">ยอดเงิน: ${user.balance.toLocaleString('th-TH')} บาท</span>
                 <div class="admin-controls">
-                    <input type="number" id="amount-${docId.replace(/[^a-zA-Z0-9]/g, '_')}" placeholder="จำนวนเงิน">
-                    <button class="deposit-btn-admin" onclick="updateUserBalance('${docId}')">+ เติมเงิน</button>
-                    <button class="withdraw-btn-admin" onclick="updateUserBalance('${docId}', false)">- ถอนเงิน</button>
+                    <input type="number" id="amount-${safeId}" placeholder="จำนวนเงิน" min="1" value="100">
+                    <button class="deposit-btn-admin" onclick="updateUserBalance('${userId}')">+ เติมเงิน</button>
+                    <button class="withdraw-btn-admin" onclick="updateUserBalance('${userId}', false)">- ถอนเงิน</button>
                 </div>
             `;
             userListElement.appendChild(listItem);
@@ -898,7 +723,7 @@ async function renderUserList() {
         });
 
         if (userCount === 0) {
-            userListElement.innerHTML = '<li>ไม่มีผู้เล่นในระบบ</li>';
+            userListElement.innerHTML = '<li>ไม่มีผู้เล่นในระบบ (ไม่รวมแอดมิน)</li>';
         }
 
     } catch (error) {
@@ -907,8 +732,8 @@ async function renderUserList() {
     }
 }
 
-async function updateUserBalance(docId, isDeposit = true) {
-    const safeId = docId.replace(/[^a-zA-Z0-9]/g, '_');
+async function updateUserBalance(userId, isDeposit = true) {
+    const safeId = userId.replace(/[^a-zA-Z0-9]/g, '_');
     const amountInput = document.getElementById(`amount-${safeId}`);
     const amount = parseInt(amountInput.value);
 
@@ -917,18 +742,19 @@ async function updateUserBalance(docId, isDeposit = true) {
         return;
     }
     
-    const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(docId);
+    const userRef = db.collection(USERS_COLLECTION).doc(userId);
 
     try {
         await db.runTransaction(async (transaction) => {
             const doc = await transaction.get(userRef);
+            
             if (!doc.exists) {
                 throw "ไม่พบผู้เล่น";
             }
             
-            let currentBalance = doc.data().balance;
+            let currentBalance = doc.data().balance || 0;
             let newBalance;
-            const displayName = doc.data().displayName || docId;
+            const displayName = doc.data().displayName || userId;
 
             if (isDeposit) {
                 newBalance = currentBalance + amount;
@@ -941,131 +767,104 @@ async function updateUserBalance(docId, isDeposit = true) {
             
             transaction.update(userRef, { balance: newBalance });
             
-            if (isDeposit) {
-                alert(`เติมเงินให้ ${displayName}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
-            } else {
-                alert(`ถอนเงินจาก ${displayName}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
-            }
+            // ใช้ console.log แทน alert เพื่อไม่ให้ Admin ต้องกด OK ซ้ำๆ
+            console.log(`${isDeposit ? 'เติมเงิน' : 'ถอนเงิน'} ให้ ${displayName}: ${amount} บาท ยอดเงินใหม่คือ ${newBalance} บาท`);
         });
 
         renderUserList();
-        amountInput.value = ''; 
+        amountInput.value = '100'; // รีเซ็ตเป็นค่าเริ่มต้น
 
     } catch (error) {
         if (error === "ยอดเงินไม่พอ") {
-            alert(`ยอดเงินไม่เพียงพอสำหรับการถอน ${amount} บาท`);
+            alert(`ยอดเงินของผู้เล่นไม่เพียงพอสำหรับการถอน ${amount} บาท`);
         } else {
-            alert(`เกิดข้อผิดพลาด: ${error}`);
+            alert(`เกิดข้อผิดพลาดในการทำรายการ: ${error.message || error}`);
             console.error("Transaction failed: ", error);
         }
     }
 }
 
-async function getUserBalance(docId) {
-    const doc = await db.collection(HOO_HEY_HOW_COLLECTION).doc(docId).get();
-    return doc.exists ? doc.data().balance : 0;
+// ===============================================
+// 7. Game Logic (Betting and Roll)
+// ===============================================
+
+function updateBetControls() {
+    // ปรับ Max Bet ตามยอดเงินที่มี
+    maxBet = Math.max(minBet, Math.min(maxBetDefault, balance)); 
+    const betRange = document.getElementById('betRange');
+    betRange.max = maxBet;
+    
+    // ปรับค่า selectedBetAmount หากเกิน maxBet
+    if (selectedBetAmount > maxBet) {
+        selectedBetAmount = maxBet;
+        betRange.value = maxBet;
+    }
+    document.getElementById('currentBetAmount').textContent = selectedBetAmount;
+    
+    // ตรวจสอบสถานะปุ่ม
+    document.querySelectorAll('.bet-button').forEach(button => {
+        button.disabled = balance <= 0 || maxBet < minBet;
+    });
+    
+    // ปรับสถานะปุ่ม Roll
+    const totalCost = Object.values(bets).length * selectedBetAmount;
+    document.getElementById('roll').disabled = totalCost === 0 || totalCost > balance;
 }
 
-
-// ===============================================
-// 6. Game Logic Handlers
-// ===============================================
-
-const animals = ['น้ำเต้า','ปู','ปลา','เสือ','ไก่','กุ้ง'];
-const emojis = ['🍐','🦀','🐟','🐯','🐔','🦐'];
-const animalValues = { 'น้ำเต้า': 1, 'ปู': 2, 'ปลา': 3, 'เสือ': 4, 'ไก่': 5, 'กุ้ง': 6 };
-
-const activeBets = new Map(); 
-
-const diceArea = document.getElementById('diceArea');
-const result = document.getElementById('result');
-const rollSound = document.getElementById('rollSound');
-const winSound = document.getElementById('winSound');
-
+function setBetAmount(amount) {
+    const betRange = document.getElementById('betRange');
+    selectedBetAmount = Math.min(amount, maxBet);
+    betRange.value = selectedBetAmount;
+    document.getElementById('currentBetAmount').textContent = selectedBetAmount;
+    updateTotalCostDisplay();
+    updateBetControls(); 
+}
 
 function updateTotalCostDisplay() {
-    const amountPerBet = parseInt(betInput.value) || 0;
-    const totalCost = amountPerBet * activeBets.size;
-    document.querySelector('#totalBetDisplay span').textContent = totalCost.toLocaleString();
-    
-    const rollButton = document.getElementById('roll');
-    if (totalCost > balance && balance > 0) {
-        rollButton.disabled = true;
-        rollButton.textContent = '❌ เงินเดิมพันรวมเกินยอดเงิน!';
-    } else if (balance > 0) {
-        rollButton.disabled = false;
-        rollButton.textContent = 'หมุนลูกเต๋า';
-    }
+    const totalCost = Object.keys(bets).length * selectedBetAmount;
+    document.getElementById('totalCost').textContent = totalCost.toLocaleString('th-TH');
+    document.getElementById('roll').disabled = totalCost === 0 || totalCost > balance;
 }
 
-function setMaxBet() {
-    let max = Math.min(balance, maxBetDefault);
-    betInput.value = max;
-    updateTotalCostDisplay(); 
-}
-
-betInput.addEventListener('input', updateTotalCostDisplay); 
-
-const bettingButtons = document.querySelectorAll('[data-bet-type]');
-bettingButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const type = btn.dataset.betType;
-        const value = btn.dataset.betValue;
-        const key = `${type}-${value}`;
-
-        if (activeBets.has(key)) {
-            activeBets.delete(key);
-            btn.classList.remove('selected');
+document.querySelectorAll('.bet-button').forEach(button => {
+    button.addEventListener('click', function() {
+        const symbol = this.getAttribute('data-symbol');
+        if (bets[symbol]) {
+            delete bets[symbol];
+            this.classList.remove('selected');
         } else {
-            if (type !== 'single' && (activeBets.has('high_low-High') || activeBets.has('high_low-Low') || activeBets.has('triple_any-Any'))) {
-                let conflictingKey = Array.from(activeBets.keys()).find(k => k.startsWith('high_low') || k.startsWith('triple_any'));
-                if (conflictingKey) {
-                    activeBets.get(conflictingKey).classList.remove('selected');
-                    activeBets.delete(conflictingKey);
-                }
-            }
-            
-            activeBets.set(key, btn);
-            btn.classList.add('selected');
+            bets[symbol] = true;
+            this.classList.add('selected');
         }
-        
-        updateTotalCostDisplay(); 
+        updateTotalCostDisplay();
     });
 });
 
-
-// ===============================================
-// 7. โค้ด Roll Dice พร้อม Transaction 
-// ===============================================
+document.getElementById('betRange').addEventListener('input', function() {
+    selectedBetAmount = parseInt(this.value);
+    document.getElementById('currentBetAmount').textContent = selectedBetAmount;
+    updateTotalCostDisplay();
+});
 
 document.getElementById('roll').addEventListener('click', async () => {
-    const currentBetAmount = parseInt(betInput.value); 
+    const totalBetCost = Object.keys(bets).length * selectedBetAmount;
 
-    if (activeBets.size === 0) { alert('กรุณาเลือกรูปแบบการเดิมพันอย่างน้อย 1 อย่าง!'); return; }
-    
-    const totalBetCost = currentBetAmount * activeBets.size;
-    
-    if (totalBetCost > balance) { 
-        alert(`ยอดเงินไม่เพียงพอสำหรับการเดิมพันทั้งหมด ${totalBetCost} บาท!`); 
-        updateBetControls(); 
-        updateTotalCostDisplay();
-        return; 
+    if (totalBetCost === 0) {
+        alert('กรุณาเลือกเดิมพันอย่างน้อยหนึ่งอย่าง');
+        return;
+    }
+    if (totalBetCost > balance) {
+        alert('ยอดเงินไม่เพียงพอสำหรับการเดิมพันนี้!');
+        return;
     }
 
-    // ************ การเตรียม UI ก่อน Transaction ************
-    balance -= totalBetCost;
-    balanceDisplay.textContent = balance;
-    diceArea.textContent = 'หมุน...';
-    result.textContent = '';
-    rollSound.currentTime = 0;
-    rollSound.play();
-    document.getElementById('roll').disabled = true; 
+    document.getElementById('roll').disabled = true;
+    document.getElementById('result').textContent = 'กำลังเขย่า...';
 
+    // ************ 1. บันทึกยอดเงินที่ถูกหักลงใน Firestore ด้วย Transaction ************
     try {
-        // ************ 1. บันทึกยอดเงินที่ถูกหักลงใน Firestore ด้วย Transaction ************
         await db.runTransaction(async (transaction) => {
-            // *** currentEmail คือ Doc ID (เบอร์โทรศัพท์ล้วน) ***
-            const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentEmail); 
+            const userRef = db.collection(USERS_COLLECTION).doc(currentID); 
             const userDoc = await transaction.get(userRef);
 
             if (!userDoc.exists) {
@@ -1083,187 +882,195 @@ document.getElementById('roll').addEventListener('click', async () => {
             balance = newDbBalance;
         });
 
-        // ************ 2. ดำเนินการหมุนลูกเต๋าและคำนวณผล (เหมือนเดิม) ************
-        setTimeout(async () => { 
-            const diceResults = []; 
-            const diceValues = []; 
-            for (let i = 0; i < 3; i++) {
-                const randomIndex = Math.floor(Math.random() * animals.length);
-                const animalName = animals[randomIndex];
-                diceResults.push(animalName);
-                diceValues.push(animalValues[animalName]);
+        // อัปเดต UI ชั่วคราวหลังหักเงิน
+        balanceDisplay.textContent = balance.toLocaleString('th-TH');
+
+        // ************ 2. ดำเนินการหมุนลูกเต๋าและคำนวณผล ************
+        const diceResults = [
+            symbols[Math.floor(Math.random() * 6)],
+            symbols[Math.floor(Math.random() * 6)],
+            symbols[Math.floor(Math.random() * 6)]
+        ];
+
+        // แสดงผลการเขย่า
+        for (let i = 0; i < 3; i++) {
+            document.getElementById(`dice${i + 1}`).textContent = symbolMap[diceResults[i]];
+        }
+        
+        let totalWin = 0;
+        const counts = {};
+        let totalPoints = 0;
+
+        // นับผลลัพธ์
+        diceResults.forEach(result => {
+            counts[result] = (counts[result] || 0) + 1;
+        });
+
+        // คำนวณแต้มรวม (ไม่จำเป็นต้องใช้ แต่เก็บไว้เผื่อขยาย)
+        const symbolPoints = { "ปลา": 1, "กุ้ง": 2, "น้ำเต้า": 3, "ไก่": 4, "ปู": 5, "เสือ": 6 };
+        diceResults.forEach(result => totalPoints += symbolPoints[result] + 1); // 1-6
+
+        // ตรวจสอบการชนะแทงเดี่ยว (ปู, ปลา, ฯลฯ)
+        for (const symbol in bets) {
+            if (symbols.includes(symbol) && counts[symbol]) {
+                totalWin += selectedBetAmount * (counts[symbol] + 1); // ทุน + กำไร
             }
-            
-            diceArea.innerHTML = diceResults.map(name => emojis[animals.indexOf(name)]).join(' ');
+        }
+        
+        // ตรวจสอบการชนะแทงรวม (สูง/ต่ำ/ตอง)
+        const totalDiceValue = diceResults.map(s => symbols.indexOf(s) + 1).reduce((a, b) => a + b, 0) + 3; // 1-6 + 1-6 + 1-6 = 3-18. 
+                                                                                                           // แต่ในเกมคลาสสิก: น้ำเต้า (0) - กุ้ง (5) => 0-15.
+        // สมมติว่าใช้แต้มรวมตามมาตรฐานทั่วไป (ปลา 1, กุ้ง 2, ... เสือ 6)
+        const classicPoints = { "ปลา": 1, "กุ้ง": 2, "น้ำเต้า": 3, "ไก่": 4, "ปู": 5, "เสือ": 6 };
+        const classicSum = diceResults.map(s => classicPoints[s]).reduce((a, b) => a + b, 0);
 
-            const sum = diceValues.reduce((a, b) => a + b, 0);
-            const counts = diceResults.reduce((acc, name) => {
-                acc[name] = (acc[name] || 0) + 1;
-                return acc;
-            }, {});
-            
-            const isTriple = Object.values(counts).some(count => count === 3);
-            const tripleAnimal = isTriple ? diceResults[0] : null;
-            const isHigh = sum >= 11 && sum <= 17;
-            const isLow = sum >= 4 && sum <= 10;
-            
-            let totalWinnings = 0;
-            let winDetails = [];
-            let didWin = false;
+        const isHigh = classicSum >= 11 && classicSum <= 17;
+        const isLow = classicSum >= 4 && classicSum <= 10;
+        const isTriple = Object.values(counts).includes(3);
 
-            activeBets.forEach((element, key) => {
-                const [type, value] = key.split('-');
-                let profit = 0;
-                let resultMessage = '';
+        if (bets['สูง'] && isHigh) {
+            totalWin += selectedBetAmount * 2;
+        }
+        if (bets['ต่ำ'] && isLow) {
+            totalWin += selectedBetAmount * 2;
+        }
+        if (bets['ตอง'] && isTriple) {
+            totalWin += selectedBetAmount * 8; // จ่าย 7:1 (รวมทุนเป็น 8)
+        }
 
-                switch(type) {
-                    case 'single':
-                        const hitCount = counts[value] || 0;
-                        if (hitCount > 0) {
-                            profit = currentBetAmount * hitCount; 
-                            resultMessage = `ชนะ แทงเดี่ยว ${value} ออก ${hitCount} ตัว (กำไร ${profit} บาท)`;
-                        }
-                        break;
+        // อัปเดตยอดเงิน
+        balance += totalWin;
 
-                    case 'high_low':
-                        const betIsHigh = value === 'High';
-                        
-                        if (isTriple) {
-                            resultMessage = `แพ้ ตองออก (สูง/ต่ำ แพ้ทุกกรณี)`;
-                        } else if ((betIsHigh && isHigh) || (!betIsHigh && isLow)) {
-                            profit = currentBetAmount * 1;
-                            resultMessage = `ชนะ แทง ${value} (แต้มรวม ${sum}) (กำไร ${profit} บาท)`;
-                        }
-                        break;
-                    
-                    case 'triple_any':
-                        if (isTriple) {
-                            profit = currentBetAmount * 7; 
-                            resultMessage = `ชนะ ตอง ${tripleAnimal} (กำไร ${profit} บาท)`;
-                        }
-                        break;
-                }
-                
-                if (profit > 0) {
-                    totalWinnings += profit;
-                    didWin = true;
-                    winDetails.push(resultMessage);
-                } else if (resultMessage) {
-                    winDetails.push(resultMessage);
-                }
-            });
-            
-            const totalPayout = totalBetCost + totalWinnings; 
-            balance += totalWinnings; 
-            
-            if (didWin) {
-                result.textContent = `🎉 ชนะ! ได้รับเงินคืนทั้งหมด ${totalPayout} บาท (กำไรสุทธิ ${totalWinnings} บาท)\nรายละเอียด: ${winDetails.join(' | ')}`;
-                winSound.currentTime = 0;
-                winSound.play();
-            } else {
-                result.textContent = `เสียใจ! ไม่มีรายการเดิมพันที่ชนะ 😢 (เสีย ${totalBetCost} บาท)`;
-            }
-            
-            activeBets.forEach(element => element.classList.remove('selected'));
-            activeBets.clear();
-            
-            // ************ 3. บันทึกยอดเงินสุดท้ายลงใน Firestore ด้วย Transaction ************
-            await db.runTransaction(async (transaction) => {
-                const userRef = db.collection(HOO_HEY_HOW_COLLECTION).doc(currentEmail);
-                transaction.update(userRef, { balance: balance });
-            });
-            
-            updateBetControls();
-            updateTotalCostDisplay(); 
-            document.getElementById('roll').disabled = false; 
+        // ************ 3. บันทึกยอดเงินสุดท้ายลงใน Firestore ด้วย Transaction ************
+        await db.runTransaction(async (transaction) => {
+            const userRef = db.collection(USERS_COLLECTION).doc(currentID);
+            transaction.update(userRef, { balance: balance });
+        });
+        
+        // อัปเดต UI
+        balanceDisplay.textContent = balance.toLocaleString('th-TH');
+        const profit = totalWin - totalBetCost;
+        if (profit > 0) {
+            document.getElementById('result').textContent = `🎉 ชนะ! ได้รับ ${profit.toLocaleString('th-TH')} บาท ยอดเงินรวม ${balance.toLocaleString('th-TH')} บาท`;
+            document.getElementById('result').style.color = '#4CAF50';
+        } else if (profit < 0) {
+            document.getElementById('result').textContent = `😢 แพ้! เสีย ${Math.abs(profit).toLocaleString('th-TH')} บาท ยอดเงินรวม ${balance.toLocaleString('th-TH')} บาท`;
+            document.getElementById('result').style.color = '#FF5722';
+        } else {
+            document.getElementById('result').textContent = `เสมอ! ไม่ได้ไม่เสีย ยอดเงินรวม ${balance.toLocaleString('th-TH')} บาท`;
+            document.getElementById('result').style.color = '#f7a01a';
+        }
 
-        }, 900); 
+        // รีเซ็ตการเดิมพัน
+        bets = {};
+        document.querySelectorAll('.bet-button').forEach(btn => btn.classList.remove('selected'));
+        updateTotalCostDisplay();
+        
+        document.getElementById('roll').disabled = false;
 
     } catch (error) {
         alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล! ยอดเงินอาจไม่ถูกหัก/เพิ่ม กรุณาลองใหม่');
         
-        const latestBalance = await getUserBalance(currentEmail); 
+        // ดึงยอดเงินล่าสุดกลับมาจากฐานข้อมูล
+        const latestBalance = await getUserBalance(currentID); 
         balance = latestBalance; 
+        balanceDisplay.textContent = balance.toLocaleString('th-TH');
         
-        balanceDisplay.textContent = balance;
-        console.error("Game Roll Transaction Failed: ", error);
         document.getElementById('roll').disabled = false;
-        updateBetControls();
-        updateTotalCostDisplay(); 
-        result.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ!';
+        document.getElementById('result').textContent = '⚠️ ข้อผิดพลาด: กรุณาลองใหม่';
+        document.getElementById('result').style.color = '#FF0000';
+        console.error("Roll Transaction failed: ", error);
     }
 });
 
+async function getUserBalance(userId) {
+    const doc = await db.collection(USERS_COLLECTION).doc(userId).get();
+    return doc.exists ? doc.data().balance || 0 : 0;
+}
+
 
 // -----------------------------------------------------
-// 🎯🎯🎯 8. การบังคับล็อคอินอัตโนมัติทันทีเมื่อโหลดหน้า (Auto Login) 🎯🎯🎯
+// 8. การบังคับล็อคอินอัตโนมัติทันทีเมื่อโหลดหน้า (Auto Login)
 // -----------------------------------------------------
 
 async function checkAuthStateAndRoute() {
+    // ซ่อนทุกหน้าจอก่อน
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('admin-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'none';
     
-    // ตรวจสอบ Admin Login (Hardcoded check)
-    // สำหรับ Admin ต้องกรอก Admin Email เต็มรูปแบบเท่านั้นในช่อง Phone Number เพื่อให้ผ่าน
-    const authInput = document.getElementById('phoneInput') ? document.getElementById('phoneInput').value.trim() : null;
-    const passwordInput = document.getElementById('password') ? document.getElementById('password').value : null;
-
-    if (authInput === ADMIN_EMAIL && passwordInput === ADMIN_PASS) {
-        adminLoginSuccess();
-        return;
-    }
-
     try {
         const user = auth.currentUser; 
         
         if (user) {
-            const firebaseAuthEmail = user.email; // e.g., "0987654321@phone.com"
+            const authEmail = user.email;
+            let userId = null; 
             
-            if (firebaseAuthEmail === ADMIN_EMAIL) { 
-                adminLoginSuccess();
-                return;
+            // 1. กรณี Admin
+            if (authEmail === ADMIN_EMAIL) { 
+                userId = ADMIN_EMAIL;
+                const adminDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
+                if (adminDoc.exists && adminDoc.data().role === 'admin') {
+                    adminLoginSuccess(userId);
+                    return;
+                } else {
+                    // ล็อกอินค้างอยู่ แต่ไม่มีสิทธิ์แอดมินใน Firestore
+                    await auth.signOut();
+                    document.getElementById('auth-screen').style.display = 'flex';
+                    return;
+                }
             }
             
-            // *** ดึงเบอร์โทรศัพท์ล้วน (Document ID) ออกมาจาก Email ***
-            const docId = firebaseAuthEmail.split('@')[0];
+            // 2. กรณี User (ใช้เบอร์โทรศัพท์)
+            let phone = authEmail.includes('@phone.com') ? authEmail.split('@')[0] : authEmail;
+            userId = phone; 
             
-            loginSuccess(docId, user.uid); // Pass docId (เบอร์โทรศัพท์ล้วน)
+            // ตรวจสอบความถูกต้องของ ID ที่ใช้ใน Firestore (เบอร์โทร)
+            const userDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
+            if (userDoc.exists && userDoc.data().role === 'user') {
+                 loginSuccess(userId, user.uid);
+            } else {
+                 // บัญชีมีปัญหา, บังคับออกจากระบบ
+                 await auth.signOut();
+                 document.getElementById('auth-screen').style.display = 'flex';
+            }
+            
             return;
         }
 
         // หากไม่พบผู้ใช้ที่ล็อกอินอยู่ ให้แสดงหน้าล็อกอิน
-        document.getElementById('auth-screen').style.display = 'block';
+        document.getElementById('auth-screen').style.display = 'flex';
 
     } catch (error) {
         console.error("Auth state check failed:", error);
-        document.getElementById('auth-screen').style.display = 'block';
+        document.getElementById('auth-screen').style.display = 'flex';
     }
 }
 
-// เพิ่ม Listener สำหรับ Back Button
+// -----------------------------------------------------
+// 9. Initial Load and Event Listeners
+// -----------------------------------------------------
+
+// เริ่มต้นตรวจสอบสถานะการล็อกอินเมื่อโหลดหน้า
+window.addEventListener('load', checkAuthStateAndRoute);
+
+// Listener สำหรับ Back Button
 window.addEventListener('popstate', (event) => {
+    // ป้องกันการกด Back แล้วไปหน้าจอที่ไม่ควรไป
     if (event.state && (event.state.screen === 'game' || event.state.screen === 'admin')) {
         // Do nothing 
     } else {
-        // Fallback to Auth screen
         checkAuthStateAndRoute();
     }
 });
 
 // Listener สำหรับ window.focus เพื่อช่วยแก้ไขปัญหา Line OA/In-App Logout
 window.addEventListener('focus', function() {
-    // ตรวจสอบสถานะการล็อกอินทันทีที่หน้าต่างได้รับโฟกัส
     if (auth.currentUser) {
         checkAuthStateAndRoute(); 
     }
 });
-
-// เรียกใช้ Auth Check เมื่อโหลดหน้าจอเสร็จแล้ว
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuthStateAndRoute(); 
-});
-
 </script>
+
 </body>
 </html>
